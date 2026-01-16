@@ -29,6 +29,36 @@ export const loginSchema = z.object({
 export type LoginFormData = z.infer<typeof loginSchema>
 
 /**
+ * Schema forgot password (richiesta reset)
+ */
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string()
+    .min(1, errorMessages.required)
+    .email(errorMessages.email),
+})
+
+export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>
+
+/**
+ * Schema reset password (nuova password)
+ */
+export const resetPasswordSchema = z.object({
+  password: z
+    .string()
+    .min(1, errorMessages.required)
+    .min(8, errorMessages.minLength(8)),
+  confirmPassword: z
+    .string()
+    .min(1, errorMessages.required),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: errorMessages.passwordMatch,
+  path: ['confirmPassword'],
+})
+
+export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>
+
+/**
  * Schema registrazione utente
  */
 export const registerSchema = z.object({

@@ -3,6 +3,7 @@
  * Layout principale con metadata e providers
  */
 import type { Metadata, Viewport } from 'next'
+import { AuthProvider } from '@/components/auth'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -52,7 +53,9 @@ export default function RootLayout({
   return (
     <html lang="it">
       <body className="min-h-screen bg-gray-50 antialiased">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   )

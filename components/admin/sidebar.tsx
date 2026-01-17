@@ -164,8 +164,8 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-all duration-200',
                   isActive
-                    ? 'bg-white text-purple-700 font-semibold shadow-lg'
-                    : 'text-white/90 hover:bg-white/10 hover:text-white'
+                    ? 'bg-yellow-400 text-purple-900 font-semibold shadow-lg'
+                    : 'text-white hover:bg-white/20 hover:text-yellow-200'
                 )}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />

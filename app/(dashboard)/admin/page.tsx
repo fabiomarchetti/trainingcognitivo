@@ -183,6 +183,7 @@ function ActionButton({
   return (
     <Link
       href={href}
+      prefetch={false}
       className={`${bgColor} text-white rounded-2xl py-4 px-5 flex items-center justify-center gap-2 font-bold hover:scale-110 transition-all shadow-lg hover:shadow-2xl`}
     >
       {icon}
@@ -223,6 +224,7 @@ function QuickLinkCard({
   return (
     <Link
       href={href}
+      prefetch={false}
       className={`bg-white rounded-3xl p-6 border-4 border-gray-200 transition-all duration-200 ${colorClasses[color]} shadow-lg hover:shadow-2xl hover:scale-105`}
     >
       <h3 className={`text-lg font-semibold ${titleColors[color]}`}>{title}</h3>

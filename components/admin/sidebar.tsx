@@ -161,6 +161,7 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
                 key={item.href}
                 href={item.href!}
                 onClick={onClose}
+                prefetch={false}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1 transition-all duration-200',
                   isActive

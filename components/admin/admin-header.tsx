@@ -4,14 +4,11 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import {
   Menu,
   User,
   ChevronDown,
-  LogOut,
-  RefreshCw,
-  GraduationCap
+  LogOut
 } from 'lucide-react'
 import { useAuth } from '@/components/auth'
 import { RoleBadge } from '@/components/ui/badge'
@@ -49,15 +46,6 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
 
         {/* Right side */}
         <div className="flex items-center gap-3">
-          {/* Link al Training */}
-          <Link
-            href="/training"
-            className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-sm"
-          >
-            <GraduationCap className="h-4 w-4" />
-            Training
-          </Link>
-
           {/* User Menu */}
           <div className="relative">
             <button
@@ -98,16 +86,6 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                         <RoleBadge role={profile.ruolo} />
                       </div>
                     )}
-                  </div>
-                  <div className="py-1">
-                    <Link
-                      href="/training"
-                      onClick={() => setIsUserMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      <GraduationCap className="h-4 w-4" />
-                      Vai al Training
-                    </Link>
                   </div>
                   <div className="border-t border-gray-100 pt-1">
                     <button

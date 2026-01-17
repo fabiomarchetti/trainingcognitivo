@@ -172,7 +172,7 @@ export function SedeModal({ isOpen, onClose, onSuccess, sede }: SedeModalProps) 
                 Nome Sede *
               </label>
               <Input
-                placeholder="Es. Osimo - Sede Principale"
+                placeholder="Inserisci il nome della sede"
                 className="h-12 rounded-xl border-2 border-gray-300 focus:border-red-400 text-base font-semibold"
                 disabled={isLoading}
                 error={errors.nome?.message}
@@ -188,7 +188,7 @@ export function SedeModal({ isOpen, onClose, onSuccess, sede }: SedeModalProps) 
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-orange-500" />
                 <Input
-                  placeholder="Es. Via Roma, 1"
+                  placeholder="Via, piazza, numero civico"
                   className="pl-11 h-12 rounded-xl border-2 border-gray-300 focus:border-orange-400 text-base font-semibold"
                   disabled={isLoading}
                   error={errors.indirizzo?.message}
@@ -204,7 +204,7 @@ export function SedeModal({ isOpen, onClose, onSuccess, sede }: SedeModalProps) 
                   Città
                 </label>
                 <Input
-                  placeholder="Es. Osimo"
+                  placeholder="Nome della città"
                   className="h-12 rounded-xl border-2 border-gray-300 focus:border-cyan-400 text-base font-semibold"
                   disabled={isLoading}
                   error={errors.citta?.message}
@@ -216,7 +216,7 @@ export function SedeModal({ isOpen, onClose, onSuccess, sede }: SedeModalProps) 
                   Provincia
                 </label>
                 <Input
-                  placeholder="AN"
+                  placeholder="RM"
                   maxLength={2}
                   className="h-12 rounded-xl border-2 border-gray-300 focus:border-cyan-400 text-base font-semibold uppercase"
                   disabled={isLoading}
@@ -233,7 +233,7 @@ export function SedeModal({ isOpen, onClose, onSuccess, sede }: SedeModalProps) 
                   CAP
                 </label>
                 <Input
-                  placeholder="60900"
+                  placeholder="Codice postale"
                   className="h-12 rounded-xl border-2 border-gray-300 focus:border-green-400 text-base font-semibold"
                   disabled={isLoading}
                   error={errors.cap?.message}
@@ -247,7 +247,7 @@ export function SedeModal({ isOpen, onClose, onSuccess, sede }: SedeModalProps) 
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />
                   <Input
-                    placeholder="07172451"
+                    placeholder="Numero di telefono"
                     className="pl-11 h-12 rounded-xl border-2 border-gray-300 focus:border-green-400 text-base font-semibold"
                     disabled={isLoading}
                     error={errors.telefono?.message}
@@ -266,7 +266,7 @@ export function SedeModal({ isOpen, onClose, onSuccess, sede }: SedeModalProps) 
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-blue-500" />
                 <Input
                   type="email"
-                  placeholder="info@esempio.it"
+                  placeholder="Email della sede"
                   className="pl-11 h-12 rounded-xl border-2 border-gray-300 focus:border-blue-400 text-base font-semibold"
                   disabled={isLoading}
                   error={errors.email?.message}

@@ -381,28 +381,41 @@ ALTER TABLE categorie_esercizi ENABLE ROW LEVEL SECURITY;
 -- POLICIES: SEDI, SETTORI, CLASSI (Pubbliche in lettura)
 -- ============================================
 
-CREATE POLICY "Sedi visibili a tutti" ON sedi
-  FOR SELECT USING (true);
+-- SEDI
+CREATE POLICY "Utenti autenticati vedono sedi" ON sedi
+  FOR SELECT USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Solo admin modificano sedi" ON sedi
-  FOR ALL USING (
-    (SELECT ruolo FROM profiles WHERE id = auth.uid()) IN ('sviluppatore', 'amministratore')
+  FOR INSERT WITH CHECK (
+    (SELECT ruolo FROM profiles WHERE id = auth.uid()) IN ('sviluppatore', 'amministratore', 'direttore', 'casemanager')
   );
 
+CREATE POLICY "Solo admin aggiornano sedi" ON sedi
+  FOR UPDATE USING (
+    (SELECT ruolo FROM profiles WHERE id = auth.uid()) IN ('sviluppatore', 'amministratore', 'direttore', 'casemanager')
+  );
+
+CREATE POLICY "Solo admin eliminano sedi" ON sedi
+  FOR DELETE USING (
+    (SELECT ruolo FROM profiles WHERE id = auth.uid()) IN ('sviluppatore', 'amministratore', 'direttore', 'casemanager')
+  );
+
+-- SETTORI
 CREATE POLICY "Settori visibili a tutti" ON settori
   FOR SELECT USING (true);
 
 CREATE POLICY "Solo admin modificano settori" ON settori
   FOR ALL USING (
-    (SELECT ruolo FROM profiles WHERE id = auth.uid()) IN ('sviluppatore', 'amministratore')
+    (SELECT ruolo FROM profiles WHERE id = auth.uid()) IN ('sviluppatore', 'amministratore', 'direttore', 'casemanager')
   );
 
+-- CLASSI
 CREATE POLICY "Classi visibili a tutti" ON classi
   FOR SELECT USING (true);
 
 CREATE POLICY "Solo admin modificano classi" ON classi
   FOR ALL USING (
-    (SELECT ruolo FROM profiles WHERE id = auth.uid()) IN ('sviluppatore', 'amministratore')
+    (SELECT ruolo FROM profiles WHERE id = auth.uid()) IN ('sviluppatore', 'amministratore', 'direttore', 'casemanager')
   );
 
 

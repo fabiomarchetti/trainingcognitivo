@@ -126,9 +126,6 @@ export const settoreSchema = z.object({
     .min(1, errorMessages.required)
     .max(100, errorMessages.maxLength(100)),
   descrizione: z.string().nullable().optional(),
-  id_sede: z.number().nullable().optional(),
-  ordine: z.number().default(0),
-  stato: z.enum(['attivo', 'sospeso']).default('attivo'),
 })
 
 export type SettoreFormData = z.infer<typeof settoreSchema>
@@ -143,8 +140,6 @@ export const classeSchema = z.object({
     .max(50, errorMessages.maxLength(50)),
   descrizione: z.string().max(255).nullable().optional(),
   id_settore: z.number(),
-  ordine: z.number().default(0),
-  stato: z.enum(['attiva', 'sospesa']).default('attiva'),
 })
 
 export type ClasseFormData = z.infer<typeof classeSchema>

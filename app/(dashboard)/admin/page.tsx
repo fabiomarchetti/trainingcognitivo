@@ -19,20 +19,20 @@ export default function AdminPage() {
   return (
     <div className="space-y-6">
       {/* Header con titolo */}
-      <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg">
+      <div className="bg-gradient-to-r from-orange-400 via-yellow-400 to-green-400 rounded-3xl p-6 text-white shadow-2xl border-4 border-white">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Heart className="h-7 w-7" />
+            <h1 className="text-3xl font-black flex items-center gap-3 drop-shadow-lg">
+              <Heart className="h-8 w-8 animate-pulse" />
               Pannello Amministrativo
             </h1>
-            <p className="text-purple-100 mt-1">
-              Gestione completa del sistema TrainingCognitivo
+            <p className="text-white/90 mt-2 font-semibold text-lg drop-shadow">
+              🌟 Gestione completa del sistema TrainingCognitivo
             </p>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-white text-purple-600 rounded-xl font-medium hover:bg-purple-50 transition-colors shadow">
-            <RefreshCw className="h-4 w-4" />
-            Aggiorna Dati
+          <button className="flex items-center gap-2 px-5 py-3 bg-white text-green-600 rounded-2xl font-bold hover:scale-110 transition-all shadow-xl hover:shadow-2xl">
+            <RefreshCw className="h-5 w-5" />
+            Aggiorna
           </button>
         </div>
       </div>
@@ -70,8 +70,10 @@ export default function AdminPage() {
       </div>
 
       {/* Azioni Rapide */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Azioni Rapide</h2>
+      <div className="bg-white rounded-3xl p-6 shadow-xl border-4 border-cyan-200">
+        <h2 className="text-xl font-black text-gray-800 mb-4 flex items-center gap-2">
+          ⚡ Azioni Rapide
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <ActionButton
             href="/admin/utenti"
@@ -157,7 +159,7 @@ function StatCard({
   borderColor: string
 }) {
   return (
-    <div className={`${bgColor} ${borderColor} border-2 rounded-2xl p-5 flex items-center justify-between`}>
+    <div className={`${bgColor} ${borderColor} border-4 rounded-3xl p-5 flex items-center justify-between shadow-lg hover:shadow-xl transition-shadow`}>
       <div>
         <p className="text-sm text-gray-600 font-medium">{label}</p>
         <p className="text-3xl font-bold text-gray-800 mt-1">{value}</p>
@@ -181,7 +183,7 @@ function ActionButton({
   return (
     <Link
       href={href}
-      className={`${bgColor} text-white rounded-xl py-3 px-4 flex items-center justify-center gap-2 font-medium hover:opacity-90 transition-opacity shadow-md`}
+      className={`${bgColor} text-white rounded-2xl py-4 px-5 flex items-center justify-center gap-2 font-bold hover:scale-110 transition-all shadow-lg hover:shadow-2xl`}
     >
       {icon}
       {label}
@@ -221,7 +223,7 @@ function QuickLinkCard({
   return (
     <Link
       href={href}
-      className={`bg-white rounded-2xl p-5 border-2 border-gray-200 transition-all duration-200 ${colorClasses[color]} shadow-sm hover:shadow-md`}
+      className={`bg-white rounded-3xl p-6 border-4 border-gray-200 transition-all duration-200 ${colorClasses[color]} shadow-lg hover:shadow-2xl hover:scale-105`}
     >
       <h3 className={`text-lg font-semibold ${titleColors[color]}`}>{title}</h3>
       <p className="text-sm text-gray-500 mt-1">{description}</p>

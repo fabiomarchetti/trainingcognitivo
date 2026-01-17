@@ -124,17 +124,17 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-gradient-to-b from-purple-600 to-purple-800 text-white transition-transform duration-300 lg:translate-x-0 flex flex-col',
+          'fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-gradient-to-b from-cyan-400 via-teal-400 to-green-500 text-white transition-transform duration-300 lg:translate-x-0 flex flex-col shadow-xl',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         {/* Header Sidebar */}
-        <div className="flex items-center justify-between p-4 border-b border-purple-500/30">
+        <div className="flex items-center justify-between p-4 border-b border-white/20">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-              <Settings className="h-5 w-5" />
+            <div className="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
+              <Settings className="h-5 w-5 text-green-600" />
             </div>
-            <span className="font-bold text-lg">Pannello Amministrativo</span>
+            <span className="font-bold text-lg drop-shadow-md">Pannello Admin</span>
           </div>
           <button
             onClick={onClose}
@@ -148,7 +148,7 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
         <nav className="flex-1 overflow-y-auto py-4 px-3">
           {menuItems.map((item, index) => {
             if (item.type === 'divider') {
-              return <div key={index} className="my-2 border-t border-purple-500/30" />
+              return <div key={index} className="my-2 border-t border-white/20" />
             }
 
             const Icon = item.icon!
@@ -162,12 +162,12 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
                 href={item.href!}
                 onClick={onClose}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-all duration-200',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1 transition-all duration-200',
                   isActive
-                    ? 'bg-yellow-400 font-semibold shadow-lg'
-                    : 'hover:bg-white/20'
+                    ? 'bg-yellow-400 font-bold shadow-lg scale-105'
+                    : 'hover:bg-white/20 hover:scale-105'
                 )}
-                style={{ color: isActive ? '#581c87' : '#ffffff' }}
+                style={{ color: isActive ? '#047857' : '#ffffff' }}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
                 <span className="text-sm">{item.label}</span>
@@ -177,8 +177,8 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
         </nav>
 
         {/* Footer Sidebar */}
-        <div className="p-4 border-t border-purple-500/30 text-center">
-          <p className="text-xs text-purple-200">TrainingCognitivo v2.0</p>
+        <div className="p-4 border-t border-white/20 text-center">
+          <p className="text-xs text-white/80 font-semibold">🎨 TrainingCognitivo v2.0</p>
         </div>
       </aside>
     </>

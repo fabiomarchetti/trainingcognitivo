@@ -26,7 +26,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
   }
 
   return (
-    <header className="bg-gradient-to-r from-purple-600 to-purple-700 text-white sticky top-0 z-40 shadow-lg">
+    <header className="bg-gradient-to-r from-cyan-400 to-teal-500 text-white sticky top-0 z-40 shadow-xl">
       <div className="flex items-center justify-between h-14 px-4">
         {/* Left side */}
         <div className="flex items-center gap-3">
@@ -37,10 +37,10 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-              <span className="font-bold text-sm">TC</span>
+            <div className="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
+              <span className="font-bold text-lg text-green-600">TC</span>
             </div>
-            <span className="font-semibold hidden sm:block">Pannello Amministrativo</span>
+            <span className="font-bold hidden sm:block drop-shadow-md">🎨 Pannello Admin</span>
           </div>
         </div>
 
@@ -52,16 +52,16 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/10 rounded-lg transition-colors"
             >
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                <User className="h-4 w-4" />
+              <div className="w-9 h-9 bg-orange-400 rounded-full flex items-center justify-center shadow-md">
+                <User className="h-5 w-5 text-white" />
               </div>
               <div className="hidden sm:block text-left">
-                <p className="text-sm font-medium">
+                <p className="text-sm font-bold drop-shadow">
                   {profile?.nome} {profile?.cognome}
                 </p>
                 {profile?.ruolo && (
-                  <span className="text-xs text-purple-200 capitalize">
-                    ({profile.ruolo})
+                  <span className="text-xs text-yellow-200 capitalize font-semibold">
+                    {profile.ruolo}
                   </span>
                 )}
               </div>

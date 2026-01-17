@@ -15,7 +15,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-green-50">
       {/* Sidebar */}
       <AdminSidebar
         isOpen={sidebarOpen}

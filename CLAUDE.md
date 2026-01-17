@@ -26,6 +26,7 @@ npm run lint             # Linting ESLint
 ## Architettura
 
 ### Struttura Cartelle
+
 ```
 trainingcognitivo/
 ├── app/                      # Next.js App Router
@@ -66,6 +67,7 @@ trainingcognitivo/
 **URL**: `https://hrmrndmjhriehavqfquj.supabase.co`
 
 **Tabelle principali**:
+
 - `profiles` - Profili utente (estende auth.users)
 - `sedi` - Sedi/location
 - `settori` - Settori per sede
@@ -80,6 +82,7 @@ trainingcognitivo/
 - `log_accessi` - Log accessi sistema
 
 **Ruoli utente** (enum `ruolo_utente`):
+
 - `sviluppatore` - Accesso totale, invisibile
 - `amministratore` - Gestione sistema
 - `direttore` - Gestione sede
@@ -94,6 +97,7 @@ trainingcognitivo/
 - **RLS** (Row Level Security) su tutte le tabelle sensibili
 
 **Flusso login**:
+
 1. Utente accede a `/login`
 2. Supabase Auth verifica credenziali
 3. Middleware legge ruolo da `profiles`
@@ -105,6 +109,7 @@ trainingcognitivo/
 ## Componenti UI
 
 Stile shadcn-like con Tailwind. Componenti in `components/ui/`:
+
 - `Button` - Con varianti (default, destructive, outline, etc.)
 - `Card` - Card, CardHeader, CardContent, CardFooter
 - `Input` - Con label e error
@@ -118,6 +123,7 @@ Stile shadcn-like con Tailwind. Componenti in `components/ui/`:
 ## Validazione
 
 Schemi Zod in `lib/utils/validation.ts`:
+
 - `loginSchema`
 - `registerSchema`
 - `sedeSchema`
@@ -131,6 +137,7 @@ Schemi Zod in `lib/utils/validation.ts`:
 ## Stato Implementazione
 
 ### ✅ Completato (Fase 1)
+
 - Setup progetto Next.js 14+
 - Configurazione Supabase (client, server, middleware)
 - Schema SQL completo con RLS
@@ -139,6 +146,7 @@ Schemi Zod in `lib/utils/validation.ts`:
 - Homepage
 
 ### 🔄 Da Implementare
+
 - **Fase 2**: Sistema auth completo (logout, forgot password)
 - **Fase 3**: Pannello Admin (CRUD utenti, sedi, settori)
 - **Fase 4**: Dashboard Educatore
@@ -149,6 +157,7 @@ Schemi Zod in `lib/utils/validation.ts`:
 ## Deploy
 
 ### Vercel
+
 - Repository GitHub: `trainingcognitivo`
 - Environment variables da configurare:
   ```
@@ -158,6 +167,7 @@ Schemi Zod in `lib/utils/validation.ts`:
   ```
 
 ### Supabase
+
 - Progetto: `trainingcognitivo`
 - Region: (default)
 - Schema: eseguito da `supabase/schema.sql`

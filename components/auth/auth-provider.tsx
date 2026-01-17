@@ -58,12 +58,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Logout
   const signOut = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-    setSession(null)
-    setProfile(null)
-    router.push('/')
-    router.refresh()
+    try {
+      await supabase.auth.signOut()
+      setUser(null)
+      setSession(null)
+      setProfile(null)
+      // Forza redirect con window.location per assicurare il reload completo
+      window.location.href = '/'
+    } catch (error) {
+      console.error('Errore logout:', error)
+      // Anche in caso di errore, redirect alla home
+      window.location.href = '/'
+    }
   }
 
   // Init e listener auth state

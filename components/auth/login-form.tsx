@@ -1,5 +1,5 @@
 /**
- * Form di Login
+ * Form di Login - Stile colorato infanzia
  */
 'use client'
 
@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react'
+import { LogIn, Mail, Lock, AlertCircle, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { loginSchema, type LoginFormData } from '@/lib/utils/validation'
 import { Button } from '@/components/ui/button'
@@ -107,20 +107,25 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl font-bold">Bentornato</CardTitle>
-        <CardDescription>
+    <Card className="w-full max-w-md border-4 border-white shadow-2xl rounded-3xl bg-white/95 backdrop-blur">
+      <CardHeader className="space-y-2 text-center pb-6">
+        <div className="mx-auto w-16 h-16 bg-gradient-to-r from-cyan-400 to-green-400 rounded-2xl flex items-center justify-center mb-2 shadow-xl">
+          <Sparkles className="h-8 w-8 text-white animate-pulse" />
+        </div>
+        <CardTitle className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-cyan-600 to-green-600">
+          Bentornato! 👋
+        </CardTitle>
+        <CardDescription className="text-lg font-semibold text-gray-600">
           Inserisci le tue credenziali per accedere
         </CardDescription>
       </CardHeader>
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5">
           {/* Messaggio errore */}
           {error && (
-            <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-lg border border-red-200">
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            <div className="flex items-center gap-3 p-4 text-sm text-red-700 bg-red-100 rounded-2xl border-2 border-red-300 font-semibold">
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
@@ -128,11 +133,11 @@ export function LoginForm() {
           {/* Campo Email */}
           <div className="space-y-2">
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-cyan-500" />
               <Input
                 type="email"
                 placeholder="Email"
-                className="pl-10"
+                className="pl-12 h-14 rounded-2xl border-3 border-gray-300 focus:border-cyan-400 text-lg font-semibold"
                 autoComplete="email"
                 disabled={isLoading}
                 error={errors.email?.message}
@@ -144,11 +149,11 @@ export function LoginForm() {
           {/* Campo Password */}
           <div className="space-y-2">
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />
               <Input
                 type="password"
                 placeholder="Password"
-                className="pl-10"
+                className="pl-12 h-14 rounded-2xl border-3 border-gray-300 focus:border-green-400 text-lg font-semibold"
                 autoComplete="current-password"
                 disabled={isLoading}
                 error={errors.password?.message}
@@ -161,28 +166,28 @@ export function LoginForm() {
           <div className="text-right">
             <Link
               href="/forgot-password"
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm font-bold text-cyan-600 hover:text-cyan-700 hover:underline"
             >
-              Password dimenticata?
+              Password dimenticata? 🔑
             </Link>
           </div>
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-4">
+        <CardFooter className="flex flex-col gap-4 pt-2">
           <Button
             type="submit"
-            className="w-full"
+            className="w-full h-14 bg-gradient-to-r from-orange-400 to-red-400 hover:from-orange-500 hover:to-red-500 text-white rounded-2xl text-lg font-black shadow-xl hover:shadow-2xl hover:scale-105 transition-all"
             size="lg"
             isLoading={isLoading}
           >
-            {!isLoading && <LogIn className="h-4 w-4" />}
-            Accedi
+            {!isLoading && <LogIn className="h-5 w-5" />}
+            {isLoading ? 'Accesso...' : 'Accedi 🚀'}
           </Button>
 
-          <p className="text-sm text-center text-gray-600">
+          <p className="text-sm text-center text-gray-700 font-semibold">
             Non hai un account?{' '}
-            <Link href="/register" className="text-blue-600 hover:underline font-medium">
-              Registrati
+            <Link href="/register" className="text-cyan-600 hover:underline font-black">
+              Registrati ✨
             </Link>
           </p>
         </CardFooter>

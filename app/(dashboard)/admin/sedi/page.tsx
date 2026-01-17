@@ -3,7 +3,7 @@
  */
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Building2, Plus, Pencil, Trash2, RefreshCw } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -21,7 +21,8 @@ export default function SediPage() {
   const [selectedSede, setSelectedSede] = useState<Sede | null>(null)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [sedeToDelete, setSedeToDelete] = useState<Sede | null>(null)
-  const [supabase] = useState(() => createClient())
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
 
   // Carica sedi
   const loadSedi = useCallback(async () => {
@@ -39,7 +40,8 @@ export default function SediPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [supabase])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     loadSedi()

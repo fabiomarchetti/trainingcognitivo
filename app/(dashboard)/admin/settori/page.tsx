@@ -3,7 +3,7 @@
  */
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { ConfirmModal } from '@/components/ui/modal'
@@ -39,7 +39,8 @@ export default function SettoriPage() {
   const [selectedClasse, setSelectedClasse] = useState<Classe | null>(null)
   const [deleteClasseModalOpen, setDeleteClasseModalOpen] = useState(false)
   const [classeToDelete, setClasseToDelete] = useState<Classe | null>(null)
-  const [supabase] = useState(() => createClient())
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
 
   // Carica settori con conteggio classi
   const loadSettori = useCallback(async () => {
@@ -78,7 +79,8 @@ export default function SettoriPage() {
     } finally {
       setIsLoadingSettori(false)
     }
-  }, [supabase])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Carica classi con nome settore
   const loadClassi = useCallback(async () => {
@@ -118,7 +120,8 @@ export default function SettoriPage() {
     } finally {
       setIsLoadingClassi(false)
     }
-  }, [supabase])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     loadSettori()

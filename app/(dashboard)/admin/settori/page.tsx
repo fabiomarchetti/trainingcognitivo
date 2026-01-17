@@ -6,7 +6,6 @@
 import { useState, useEffect } from 'react'
 import { FolderTree, Users, Plus, Pencil, Trash2, RefreshCw } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
 import { ConfirmModal } from '@/components/ui/modal'
 import { SettoreModal } from '@/components/admin/settore-modal'
 import { ClasseModal } from '@/components/admin/classe-modal'
@@ -47,17 +46,31 @@ export default function SettoriPage() {
   const loadSettori = async () => {
     setIsLoadingSettori(true)
     try {
-      const { data, error } = await supabase
+      // Query 1: Ottieni tutti i settori
+      const { data: settoriData, error: settoriError } = await supabase
         .from('settori')
-        .select('*, classi(count)')
+        .select('*')
         .order('ordine', { ascending: true })
         .order('nome', { ascending: true })
 
-      if (error) throw error
+      if (settoriError) throw settoriError
 
-      const settoriWithCount = (data || []).map((s: any) => ({
+      // Query 2: Conta le classi per ogni settore
+      const { data: classiData, error: classiError } = await supabase
+        .from('classi')
+        .select('id_settore')
+
+      if (classiError) throw classiError
+
+      // Combina i risultati
+      const classiCounts = classiData?.reduce((acc, classe) => {
+        acc[classe.id_settore] = (acc[classe.id_settore] || 0) + 1
+        return acc
+      }, {} as Record<number, number>) || {}
+
+      const settoriWithCount = (settoriData || []).map(s => ({
         ...s,
-        classi_count: s.classi?.[0]?.count || 0,
+        classi_count: classiCounts[s.id] || 0,
       }))
 
       setSettori(settoriWithCount)
@@ -72,17 +85,32 @@ export default function SettoriPage() {
   const loadClassi = async () => {
     setIsLoadingClassi(true)
     try {
-      const { data, error } = await supabase
+      // Query 1: Ottieni tutte le classi
+      const { data: classiData, error: classiError } = await supabase
         .from('classi')
-        .select('*, settori(nome)')
+        .select('*')
         .order('ordine', { ascending: true })
         .order('nome', { ascending: true })
 
-      if (error) throw error
+      if (classiError) throw classiError
 
-      const classiWithSettore = (data || []).map((c: any) => ({
+      // Query 2: Ottieni tutti i settori
+      const { data: settoriData, error: settoriError } = await supabase
+        .from('settori')
+        .select('id, nome')
+
+      if (settoriError) throw settoriError
+
+      // Crea mappa settori per lookup veloce
+      const settoriMap = settoriData?.reduce((acc, settore) => {
+        acc[settore.id] = settore.nome
+        return acc
+      }, {} as Record<number, string>) || {}
+
+      // Combina i risultati
+      const classiWithSettore = (classiData || []).map(c => ({
         ...c,
-        settore_nome: c.settori?.nome || '-',
+        settore_nome: settoriMap[c.id_settore] || '-',
       }))
 
       setClassi(classiWithSettore)

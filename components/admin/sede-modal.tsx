@@ -72,7 +72,8 @@ export function SedeModal({ isOpen, onClose, onSuccess, sede }: SedeModalProps) 
         stato: 'attiva',
       })
     }
-  }, [sede, reset])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sede])
 
   const onSubmit = async (data: SedeFormData) => {
     setError(null)

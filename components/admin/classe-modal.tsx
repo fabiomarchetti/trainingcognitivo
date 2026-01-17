@@ -59,7 +59,8 @@ export function ClasseModal({ isOpen, onClose, onSuccess, classe, settori }: Cla
         descrizione: '',
       })
     }
-  }, [classe, reset])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classe])
 
   const onSubmit = async (data: ClasseFormData) => {
     setError(null)

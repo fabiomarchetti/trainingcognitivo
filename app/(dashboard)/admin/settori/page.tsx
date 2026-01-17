@@ -1,10 +1,10 @@
 /**
- * Pagina Gestione Settori e Classi - Stile colorato infanzia
+ * Pagina Gestione Settori e Classi
  */
 'use client'
 
-import { useState, useEffect } from 'react'
-import { FolderTree, Users, Plus, Pencil, Trash2, RefreshCw } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { ConfirmModal } from '@/components/ui/modal'
 import { SettoreModal } from '@/components/admin/settore-modal'
@@ -39,11 +39,10 @@ export default function SettoriPage() {
   const [selectedClasse, setSelectedClasse] = useState<Classe | null>(null)
   const [deleteClasseModalOpen, setDeleteClasseModalOpen] = useState(false)
   const [classeToDelete, setClasseToDelete] = useState<Classe | null>(null)
-
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
 
   // Carica settori con conteggio classi
-  const loadSettori = async () => {
+  const loadSettori = useCallback(async () => {
     setIsLoadingSettori(true)
     try {
       // Query 1: Ottieni tutti i settori
@@ -79,10 +78,10 @@ export default function SettoriPage() {
     } finally {
       setIsLoadingSettori(false)
     }
-  }
+  }, [supabase])
 
   // Carica classi con nome settore
-  const loadClassi = async () => {
+  const loadClassi = useCallback(async () => {
     setIsLoadingClassi(true)
     try {
       // Query 1: Ottieni tutte le classi
@@ -119,12 +118,12 @@ export default function SettoriPage() {
     } finally {
       setIsLoadingClassi(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     loadSettori()
     loadClassi()
-  }, [])
+  }, [loadSettori, loadClassi])
 
   // Settori handlers
   const handleNewSettore = () => {
@@ -201,195 +200,147 @@ export default function SettoriPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* ========== SEZIONE SETTORI ========== */}
-      <div className="space-y-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* ========== CARD SETTORI ========== */}
+      <div className="bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden">
         {/* Header Settori */}
-        <div className="bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400 rounded-3xl p-6 text-white shadow-2xl border-4 border-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-black flex items-center gap-3 drop-shadow-lg">
-                <FolderTree className="h-7 w-7" />
-                Gestione Settori
-              </h2>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={loadSettori}
-                className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-2xl font-bold transition-all shadow-lg hover:scale-105"
-              >
-                <RefreshCw className="h-4 w-4" />
-              </button>
-              <button
-                onClick={handleNewSettore}
-                className="flex items-center gap-2 px-5 py-3 bg-white text-purple-600 rounded-2xl font-bold hover:scale-110 transition-all shadow-xl hover:shadow-2xl"
-              >
-                <Plus className="h-5 w-5" />
-                Nuovo Settore
-              </button>
-            </div>
-          </div>
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900">Gestione Settori</h2>
+          <button
+            onClick={handleNewSettore}
+            className="flex items-center gap-2 px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded text-sm font-medium transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            Nuovo Settore
+          </button>
         </div>
 
         {/* Tabella Settori */}
-        <div className="bg-white rounded-3xl shadow-xl border-4 border-purple-200 overflow-hidden">
+        <div>
           {isLoadingSettori ? (
-            <div className="p-12 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-200 border-t-purple-600 mx-auto mb-4" />
-              <p className="text-gray-600 font-semibold">Caricamento settori...</p>
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-gray-600 mx-auto" />
             </div>
           ) : settori.length === 0 ? (
-            <div className="p-12 text-center">
-              <FolderTree className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 font-semibold text-lg">Nessun settore presente</p>
+            <div className="p-8 text-center text-gray-500">
+              Nessun settore presente
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gradient-to-r from-purple-400 to-indigo-400 text-white">
-                    <th className="px-6 py-4 text-left text-sm font-black uppercase">Settore</th>
-                    <th className="px-6 py-4 text-center text-sm font-black uppercase">Utilizzi</th>
-                    <th className="px-6 py-4 text-center text-sm font-black uppercase">Azioni</th>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Settore</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Utilizzi</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Azioni</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {settori.map((settore) => (
+                  <tr key={settore.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-3 text-sm text-gray-900">{settore.nome}</td>
+                    <td className="px-6 py-3 text-sm">
+                      <span className="inline-flex items-center justify-center min-w-7 h-7 px-2 bg-cyan-400 text-white rounded-full font-semibold text-xs">
+                        {settore.classi_count}
+                      </span>
+                      <span className="text-gray-600 ml-2">utilizzi</span>
+                    </td>
+                    <td className="px-6 py-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleEditSettore(settore)}
+                          className="p-1.5 border border-blue-500 text-blue-500 hover:bg-blue-50 rounded transition-colors"
+                          title="Modifica"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSettoreClick(settore)}
+                          className="p-1.5 border border-red-500 text-red-500 hover:bg-red-50 rounded transition-colors"
+                          title="Elimina"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {settori.map((settore, index) => (
-                    <tr
-                      key={settore.id}
-                      className={`border-b border-gray-200 hover:bg-purple-50 transition-colors ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                      }`}
-                    >
-                      <td className="px-6 py-4 text-base font-bold text-gray-900">{settore.nome}</td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="inline-flex items-center justify-center w-10 h-10 bg-cyan-400 text-white rounded-full font-bold shadow-md">
-                          {settore.classi_count}
-                        </span>
-                        <span className="text-sm text-gray-600 ml-2">utilizzi</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => handleEditSettore(settore)}
-                            className="p-2 bg-yellow-400 hover:bg-yellow-500 text-white rounded-xl transition-all hover:scale-110 shadow-md"
-                            title="Modifica"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteSettoreClick(settore)}
-                            className="p-2 bg-red-400 hover:bg-red-500 text-white rounded-xl transition-all hover:scale-110 shadow-md"
-                            title="Elimina"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
       </div>
 
-      {/* ========== SEZIONE CLASSI ========== */}
-      <div className="space-y-4">
+      {/* ========== CARD CLASSI ========== */}
+      <div className="bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden">
         {/* Header Classi */}
-        <div className="bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 rounded-3xl p-6 text-white shadow-2xl border-4 border-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-black flex items-center gap-3 drop-shadow-lg">
-                <Users className="h-7 w-7" />
-                Gestione Classi
-              </h2>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={loadClassi}
-                className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-2xl font-bold transition-all shadow-lg hover:scale-105"
-              >
-                <RefreshCw className="h-4 w-4" />
-              </button>
-              <button
-                onClick={handleNewClasse}
-                className="flex items-center gap-2 px-5 py-3 bg-white text-teal-600 rounded-2xl font-bold hover:scale-110 transition-all shadow-xl hover:shadow-2xl"
-              >
-                <Plus className="h-5 w-5" />
-                Nuova Classe
-              </button>
-            </div>
-          </div>
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900">Gestione Classi</h2>
+          <button
+            onClick={handleNewClasse}
+            className="flex items-center gap-2 px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded text-sm font-medium transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            Nuova Classe
+          </button>
         </div>
 
         {/* Tabella Classi */}
-        <div className="bg-white rounded-3xl shadow-xl border-4 border-teal-200 overflow-hidden">
+        <div>
           {isLoadingClassi ? (
-            <div className="p-12 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-teal-200 border-t-teal-600 mx-auto mb-4" />
-              <p className="text-gray-600 font-semibold">Caricamento classi...</p>
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-gray-600 mx-auto" />
             </div>
           ) : classi.length === 0 ? (
-            <div className="p-12 text-center">
-              <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 font-semibold text-lg">Nessuna classe presente</p>
+            <div className="p-8 text-center text-gray-500">
+              Nessuna classe presente
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gradient-to-r from-teal-400 to-cyan-400 text-white">
-                    <th className="px-6 py-4 text-left text-sm font-black uppercase">Classe</th>
-                    <th className="px-6 py-4 text-left text-sm font-black uppercase">Settore</th>
-                    <th className="px-6 py-4 text-center text-sm font-black uppercase">Utilizzi</th>
-                    <th className="px-6 py-4 text-center text-sm font-black uppercase">Azioni</th>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Classe</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Settore</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Utilizzi</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Azioni</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {classi.map((classe) => (
+                  <tr key={classe.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-3 text-sm text-gray-900">{classe.nome}</td>
+                    <td className="px-6 py-3">
+                      <span className="inline-block px-3 py-1 bg-gray-600 text-white rounded-full text-xs font-medium">
+                        {classe.settore_nome}
+                      </span>
+                    </td>
+                    <td className="px-6 py-3 text-sm">
+                      <span className="inline-flex items-center justify-center min-w-7 h-7 px-2 bg-cyan-400 text-white rounded-full font-semibold text-xs">
+                        0
+                      </span>
+                      <span className="text-gray-600 ml-2">utilizzi</span>
+                    </td>
+                    <td className="px-6 py-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleEditClasse(classe)}
+                          className="p-1.5 border border-blue-500 text-blue-500 hover:bg-blue-50 rounded transition-colors"
+                          title="Modifica"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClasseClick(classe)}
+                          className="p-1.5 border border-red-500 text-red-500 hover:bg-red-50 rounded transition-colors"
+                          title="Elimina"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {classi.map((classe, index) => (
-                    <tr
-                      key={classe.id}
-                      className={`border-b border-gray-200 hover:bg-teal-50 transition-colors ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                      }`}
-                    >
-                      <td className="px-6 py-4 text-base font-bold text-gray-900">{classe.nome}</td>
-                      <td className="px-6 py-4">
-                        <span className="inline-block px-4 py-1 bg-gray-500 text-white rounded-full text-sm font-bold">
-                          {classe.settore_nome}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="inline-flex items-center justify-center w-10 h-10 bg-cyan-400 text-white rounded-full font-bold shadow-md">
-                          0
-                        </span>
-                        <span className="text-sm text-gray-600 ml-2">utilizzi</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => handleEditClasse(classe)}
-                            className="p-2 bg-yellow-400 hover:bg-yellow-500 text-white rounded-xl transition-all hover:scale-110 shadow-md"
-                            title="Modifica"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClasseClick(classe)}
-                            className="p-2 bg-red-400 hover:bg-red-500 text-white rounded-xl transition-all hover:scale-110 shadow-md"
-                            title="Elimina"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
       </div>

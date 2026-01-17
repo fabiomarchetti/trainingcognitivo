@@ -53,7 +53,8 @@ export function SettoreModal({ isOpen, onClose, onSuccess, settore }: SettoreMod
         descrizione: '',
       })
     }
-  }, [settore, reset])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settore])
 
   const onSubmit = async (data: SettoreFormData) => {
     setError(null)

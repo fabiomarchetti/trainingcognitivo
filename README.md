@@ -40,3 +40,6 @@ GITHUB:
 git add .  
  git commit -m "Descrizione modifica"  
  git push
+
+COME CHIUDERE TUTTI I SERVER LOCALI: pkill -f "next dev" && echo "✓ Tutti i server Next.js chiusi"
+pkill -f "next dev"

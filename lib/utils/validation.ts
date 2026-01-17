@@ -112,7 +112,7 @@ export const sedeSchema = z.object({
   cap: z.string().max(10).nullable().optional(),
   telefono: z.string().max(20).nullable().optional(),
   email: z.string().email(errorMessages.email).nullable().optional(),
-  stato: z.enum(['attiva', 'sospesa', 'chiusa']).default('attiva'),
+  stato: z.enum(['attiva', 'sospesa', 'chiusa']),
 })
 
 export type SedeFormData = z.infer<typeof sedeSchema>

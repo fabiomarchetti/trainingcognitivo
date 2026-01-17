@@ -164,9 +164,10 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 transition-all duration-200',
                   isActive
-                    ? 'bg-yellow-400 text-purple-900 font-semibold shadow-lg'
-                    : 'text-white hover:bg-white/20 hover:text-yellow-200'
+                    ? 'bg-yellow-400 font-semibold shadow-lg'
+                    : 'hover:bg-white/20'
                 )}
+                style={{ color: isActive ? '#581c87' : '#ffffff' }}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
                 <span className="text-sm">{item.label}</span>

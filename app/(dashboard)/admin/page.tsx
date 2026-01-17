@@ -1,60 +1,230 @@
 /**
- * Pagina Admin - Placeholder
+ * Pagina Admin - Panoramica
  */
+'use client'
+
+import Link from 'next/link'
+import {
+  Users,
+  UserCheck,
+  GraduationCap,
+  Heart,
+  UserPlus,
+  Settings,
+  FileText,
+  RefreshCw
+} from 'lucide-react'
+
 export default function AdminPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Pannello Amministrazione</h1>
-        <p className="text-gray-600 mt-1">Gestisci utenti, sedi, settori e esercizi</p>
+      {/* Header con titolo */}
+      <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Heart className="h-7 w-7" />
+              Pannello Amministrativo
+            </h1>
+            <p className="text-purple-100 mt-1">
+              Gestione completa del sistema TrainingCognitivo
+            </p>
+          </div>
+          <button className="flex items-center gap-2 px-4 py-2 bg-white text-purple-600 rounded-xl font-medium hover:bg-purple-50 transition-colors shadow">
+            <RefreshCw className="h-4 w-4" />
+            Aggiorna Dati
+          </button>
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Card Utenti */}
-        <a
-          href="/admin/utenti"
-          className="block p-6 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
-        >
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Utenti</h2>
-          <p className="text-sm text-gray-600">Gestisci gli utenti del sistema</p>
-        </a>
+      {/* Statistiche */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Utenti Totali"
+          value="--"
+          icon={<Users className="h-8 w-8 text-red-500" />}
+          bgColor="bg-red-50"
+          borderColor="border-red-200"
+        />
+        <StatCard
+          label="Amministratori"
+          value="--"
+          icon={<UserCheck className="h-8 w-8 text-green-500" />}
+          bgColor="bg-green-50"
+          borderColor="border-green-200"
+        />
+        <StatCard
+          label="Educatori"
+          value="--"
+          icon={<GraduationCap className="h-8 w-8 text-blue-500" />}
+          bgColor="bg-blue-50"
+          borderColor="border-blue-200"
+        />
+        <StatCard
+          label="Utenti"
+          value="--"
+          icon={<Heart className="h-8 w-8 text-emerald-500" />}
+          bgColor="bg-emerald-50"
+          borderColor="border-emerald-200"
+        />
+      </div>
 
-        {/* Card Sedi */}
-        <a
+      {/* Azioni Rapide */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">Azioni Rapide</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <ActionButton
+            href="/admin/utenti"
+            label="Nuovo Utente"
+            icon={<UserPlus className="h-5 w-5" />}
+            bgColor="bg-gradient-to-r from-red-400 to-red-500"
+          />
+          <ActionButton
+            href="/admin/utenti"
+            label="Gestisci Utenti"
+            icon={<Users className="h-5 w-5" />}
+            bgColor="bg-gradient-to-r from-amber-400 to-amber-500"
+          />
+          <ActionButton
+            href="/admin/log-accessi"
+            label="Visualizza Log"
+            icon={<FileText className="h-5 w-5" />}
+            bgColor="bg-gradient-to-r from-cyan-400 to-cyan-500"
+          />
+          <ActionButton
+            href="/admin/impostazioni"
+            label="Sistema"
+            icon={<Settings className="h-5 w-5" />}
+            bgColor="bg-gradient-to-r from-gray-400 to-gray-500"
+          />
+        </div>
+      </div>
+
+      {/* Sezioni di gestione */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <QuickLinkCard
           href="/admin/sedi"
-          className="block p-6 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
-        >
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Sedi</h2>
-          <p className="text-sm text-gray-600">Gestisci le sedi</p>
-        </a>
-
-        {/* Card Settori */}
-        <a
+          title="Gestione Sedi"
+          description="Gestisci le sedi del sistema"
+          color="purple"
+        />
+        <QuickLinkCard
           href="/admin/settori"
-          className="block p-6 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
-        >
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Settori</h2>
-          <p className="text-sm text-gray-600">Gestisci settori e classi</p>
-        </a>
-
-        {/* Card Categorie */}
-        <a
+          title="Settori e Classi"
+          description="Organizza settori e classi"
+          color="blue"
+        />
+        <QuickLinkCard
+          href="/admin/educatori"
+          title="Educatori"
+          description="Gestisci gli educatori"
+          color="green"
+        />
+        <QuickLinkCard
           href="/admin/categorie"
-          className="block p-6 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
-        >
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Categorie</h2>
-          <p className="text-sm text-gray-600">Gestisci le categorie esercizi</p>
-        </a>
-
-        {/* Card Esercizi */}
-        <a
+          title="Categorie Esercizi"
+          description="Gestisci le categorie"
+          color="orange"
+        />
+        <QuickLinkCard
           href="/admin/esercizi"
-          className="block p-6 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
-        >
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Esercizi</h2>
-          <p className="text-sm text-gray-600">Gestisci gli esercizi disponibili</p>
-        </a>
+          title="Esercizi"
+          description="Gestisci gli esercizi"
+          color="pink"
+        />
+        <QuickLinkCard
+          href="/admin/risultati"
+          title="Risultati"
+          description="Visualizza i risultati"
+          color="teal"
+        />
       </div>
     </div>
+  )
+}
+
+function StatCard({
+  label,
+  value,
+  icon,
+  bgColor,
+  borderColor,
+}: {
+  label: string
+  value: string
+  icon: React.ReactNode
+  bgColor: string
+  borderColor: string
+}) {
+  return (
+    <div className={`${bgColor} ${borderColor} border-2 rounded-2xl p-5 flex items-center justify-between`}>
+      <div>
+        <p className="text-sm text-gray-600 font-medium">{label}</p>
+        <p className="text-3xl font-bold text-gray-800 mt-1">{value}</p>
+      </div>
+      {icon}
+    </div>
+  )
+}
+
+function ActionButton({
+  href,
+  label,
+  icon,
+  bgColor,
+}: {
+  href: string
+  label: string
+  icon: React.ReactNode
+  bgColor: string
+}) {
+  return (
+    <Link
+      href={href}
+      className={`${bgColor} text-white rounded-xl py-3 px-4 flex items-center justify-center gap-2 font-medium hover:opacity-90 transition-opacity shadow-md`}
+    >
+      {icon}
+      {label}
+    </Link>
+  )
+}
+
+function QuickLinkCard({
+  href,
+  title,
+  description,
+  color,
+}: {
+  href: string
+  title: string
+  description: string
+  color: string
+}) {
+  const colorClasses: Record<string, string> = {
+    purple: 'hover:border-purple-400 hover:bg-purple-50',
+    blue: 'hover:border-blue-400 hover:bg-blue-50',
+    green: 'hover:border-green-400 hover:bg-green-50',
+    orange: 'hover:border-orange-400 hover:bg-orange-50',
+    pink: 'hover:border-pink-400 hover:bg-pink-50',
+    teal: 'hover:border-teal-400 hover:bg-teal-50',
+  }
+
+  const titleColors: Record<string, string> = {
+    purple: 'text-purple-600',
+    blue: 'text-blue-600',
+    green: 'text-green-600',
+    orange: 'text-orange-600',
+    pink: 'text-pink-600',
+    teal: 'text-teal-600',
+  }
+
+  return (
+    <Link
+      href={href}
+      className={`bg-white rounded-2xl p-5 border-2 border-gray-200 transition-all duration-200 ${colorClasses[color]} shadow-sm hover:shadow-md`}
+    >
+      <h3 className={`text-lg font-semibold ${titleColors[color]}`}>{title}</h3>
+      <p className="text-sm text-gray-500 mt-1">{description}</p>
+    </Link>
   )
 }

@@ -59,17 +59,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Logout
   const signOut = async () => {
+    console.log('[AUTH PROVIDER] Logout iniziato')
     try {
-      await supabase.auth.signOut()
+      // Cancella stato locale PRIMA del signOut per evitare race conditions
       setUser(null)
       setSession(null)
       setProfile(null)
-      // Forza redirect con window.location per assicurare il reload completo
-      window.location.href = '/'
+
+      // SignOut da Supabase con scope local (cancella solo questo dispositivo)
+      const { error } = await supabase.auth.signOut({ scope: 'local' })
+
+      if (error) {
+        console.error('[AUTH PROVIDER] Errore signOut Supabase:', error)
+      } else {
+        console.log('[AUTH PROVIDER] SignOut Supabase completato')
+      }
+
+      // Piccolo delay per dare tempo a Supabase di cancellare cookies/storage
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // Redirect al login
+      console.log('[AUTH PROVIDER] Redirect al login')
+      window.location.href = '/login'
     } catch (error) {
-      console.error('Errore logout:', error)
-      // Anche in caso di errore, redirect alla home
-      window.location.href = '/'
+      console.error('[AUTH PROVIDER] Errore logout:', error)
+      // Anche in caso di errore, pulisci e redirect
+      setUser(null)
+      setSession(null)
+      setProfile(null)
+      window.location.href = '/login'
     }
   }
 

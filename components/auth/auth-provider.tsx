@@ -75,22 +75,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Init e listener auth state
   useEffect(() => {
+    console.log('[AUTH PROVIDER] Init')
+
     const initAuth = async () => {
       setIsLoading(true)
 
-      // Ottieni sessione corrente
-      const { data: { session: currentSession } } = await supabase.auth.getSession()
+      try {
+        console.log('[AUTH PROVIDER] Getting session...')
+        // Ottieni sessione corrente
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession()
 
-      if (currentSession?.user) {
-        setSession(currentSession)
-        const profileData = await loadProfile(currentSession.user.id)
-        setUser({
-          ...currentSession.user,
-          profile: profileData,
-        })
+        if (error) {
+          console.error('[AUTH PROVIDER] Errore getSession:', error)
+          setIsLoading(false)
+          return
+        }
+
+        console.log('[AUTH PROVIDER] Session retrieved:', !!currentSession)
+
+        if (currentSession?.user) {
+          setSession(currentSession)
+          const profileData = await loadProfile(currentSession.user.id)
+          setUser({
+            ...currentSession.user,
+            profile: profileData,
+          })
+        }
+      } catch (error: any) {
+        console.error('[AUTH PROVIDER] Errore init:', error)
+        // Ignora AbortError - succede durante navigazione
+        if (error?.name !== 'AbortError') {
+          console.error('[AUTH PROVIDER] Errore non-abort:', error)
+        }
+      } finally {
+        setIsLoading(false)
       }
-
-      setIsLoading(false)
     }
 
     initAuth()
@@ -98,6 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listener per cambiamenti auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        console.log('[AUTH PROVIDER] Auth state changed:', event)
         setSession(newSession)
 
         if (event === 'SIGNED_IN' && newSession?.user) {
@@ -116,6 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
 
     return () => {
+      console.log('[AUTH PROVIDER] Cleanup')
       subscription.unsubscribe()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

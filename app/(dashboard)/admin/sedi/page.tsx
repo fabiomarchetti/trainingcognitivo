@@ -37,10 +37,13 @@ export default function SediPage() {
 
     setIsLoading(true)
     try {
+      console.log('[SEDI] Avvio query Supabase...')
       const { data, error } = await supabase
         .from('sedi')
         .select('*')
         .order('nome', { ascending: true })
+
+      console.log('[SEDI] Query completata', { hasData: !!data, hasError: !!error })
 
       if (error) {
         console.error('[SEDI] Errore query:', error)

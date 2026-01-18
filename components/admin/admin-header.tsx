@@ -22,7 +22,13 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
 
   const handleSignOut = async () => {
-    await signOut()
+    console.log('[ADMIN HEADER] Logout clicked')
+    setIsUserMenuOpen(false)
+    try {
+      await signOut()
+    } catch (error) {
+      console.error('[ADMIN HEADER] Errore logout:', error)
+    }
   }
 
   return (

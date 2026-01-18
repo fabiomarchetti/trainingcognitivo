@@ -76,14 +76,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Init e listener auth state
   useEffect(() => {
     console.log('[AUTH PROVIDER] Init')
+    let isMounted = true
+    let subscription: any = null
 
     const initAuth = async () => {
+      if (!isMounted) return
       setIsLoading(true)
 
       try {
         console.log('[AUTH PROVIDER] Getting session...')
         // Ottieni sessione corrente
         const { data: { session: currentSession }, error } = await supabase.auth.getSession()
+
+        if (!isMounted) {
+          console.log('[AUTH PROVIDER] Component unmounted, skipping')
+          return
+        }
 
         if (error) {
           console.error('[AUTH PROVIDER] Errore getSession:', error)
@@ -93,51 +101,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         console.log('[AUTH PROVIDER] Session retrieved:', !!currentSession)
 
-        if (currentSession?.user) {
+        if (currentSession?.user && isMounted) {
           setSession(currentSession)
           const profileData = await loadProfile(currentSession.user.id)
-          setUser({
-            ...currentSession.user,
-            profile: profileData,
-          })
+          if (isMounted) {
+            setUser({
+              ...currentSession.user,
+              profile: profileData,
+            })
+          }
         }
       } catch (error: any) {
+        if (!isMounted) return
         console.error('[AUTH PROVIDER] Errore init:', error)
         // Ignora AbortError - succede durante navigazione
-        if (error?.name !== 'AbortError') {
+        if (error?.name !== 'AbortError' && error?.message?.indexOf('AbortError') === -1) {
           console.error('[AUTH PROVIDER] Errore non-abort:', error)
         }
       } finally {
-        setIsLoading(false)
+        if (isMounted) {
+          setIsLoading(false)
+        }
       }
     }
 
-    initAuth()
+    // Setup auth state listener
+    const setupListener = () => {
+      const { data } = supabase.auth.onAuthStateChange(
+        async (event, newSession) => {
+          if (!isMounted) return
+          console.log('[AUTH PROVIDER] Auth state changed:', event)
+          setSession(newSession)
 
-    // Listener per cambiamenti auth
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        console.log('[AUTH PROVIDER] Auth state changed:', event)
-        setSession(newSession)
-
-        if (event === 'SIGNED_IN' && newSession?.user) {
-          const profileData = await loadProfile(newSession.user.id)
-          setUser({
-            ...newSession.user,
-            profile: profileData,
-          })
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null)
-          setProfile(null)
-        } else if (event === 'TOKEN_REFRESHED' && newSession?.user) {
-          setUser(prev => prev ? { ...prev, ...newSession.user } : null)
+          if (event === 'SIGNED_IN' && newSession?.user && isMounted) {
+            const profileData = await loadProfile(newSession.user.id)
+            if (isMounted) {
+              setUser({
+                ...newSession.user,
+                profile: profileData,
+              })
+            }
+          } else if (event === 'SIGNED_OUT' && isMounted) {
+            setUser(null)
+            setProfile(null)
+          } else if (event === 'TOKEN_REFRESHED' && newSession?.user && isMounted) {
+            setUser(prev => prev ? { ...prev, ...newSession.user } : null)
+          }
         }
-      }
-    )
+      )
+      subscription = data.subscription
+    }
+
+    initAuth()
+    setupListener()
 
     return () => {
       console.log('[AUTH PROVIDER] Cleanup')
-      subscription.unsubscribe()
+      isMounted = false
+      if (subscription) {
+        subscription.unsubscribe()
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

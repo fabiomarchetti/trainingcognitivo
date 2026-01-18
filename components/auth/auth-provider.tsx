@@ -60,35 +60,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Logout
   const signOut = async () => {
     console.log('[AUTH PROVIDER] Logout iniziato')
-    try {
-      // Cancella stato locale PRIMA del signOut per evitare race conditions
-      setUser(null)
-      setSession(null)
-      setProfile(null)
 
-      // SignOut da Supabase con scope local (cancella solo questo dispositivo)
+    // Cancella stato React immediatamente
+    setUser(null)
+    setSession(null)
+    setProfile(null)
+
+    try {
+      console.log('[AUTH PROVIDER] Chiamata signOut Supabase...')
+
+      // Prova a fare signOut da Supabase
       const { error } = await supabase.auth.signOut({ scope: 'local' })
 
       if (error) {
         console.error('[AUTH PROVIDER] Errore signOut Supabase:', error)
       } else {
-        console.log('[AUTH PROVIDER] SignOut Supabase completato')
+        console.log('[AUTH PROVIDER] SignOut Supabase OK')
       }
-
-      // Piccolo delay per dare tempo a Supabase di cancellare cookies/storage
-      await new Promise(resolve => setTimeout(resolve, 100))
-
-      // Redirect al login
-      console.log('[AUTH PROVIDER] Redirect al login')
-      window.location.href = '/login'
     } catch (error) {
-      console.error('[AUTH PROVIDER] Errore logout:', error)
-      // Anche in caso di errore, pulisci e redirect
-      setUser(null)
-      setSession(null)
-      setProfile(null)
-      window.location.href = '/login'
+      console.error('[AUTH PROVIDER] Catch errore signOut:', error)
     }
+
+    // Forza cancellazione manuale da localStorage
+    try {
+      console.log('[AUTH PROVIDER] Pulizia manuale localStorage...')
+      // Supabase salva la sessione in chiavi che iniziano con 'sb-'
+      const keysToRemove = Object.keys(localStorage).filter(key =>
+        key.startsWith('sb-') || key.includes('supabase')
+      )
+      keysToRemove.forEach(key => {
+        console.log('[AUTH PROVIDER] Rimuovo chiave:', key)
+        localStorage.removeItem(key)
+      })
+      console.log('[AUTH PROVIDER] localStorage pulito')
+    } catch (error) {
+      console.error('[AUTH PROVIDER] Errore pulizia localStorage:', error)
+    }
+
+    // Redirect FORZATO al login
+    console.log('[AUTH PROVIDER] Redirect al login...')
+    setTimeout(() => {
+      console.log('[AUTH PROVIDER] Eseguo redirect')
+      window.location.href = '/login'
+    }, 200)
   }
 
   // Init e listener auth state

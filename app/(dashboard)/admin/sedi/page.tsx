@@ -15,6 +15,8 @@ import type { Database } from '@/lib/supabase/types'
 type Sede = Database['public']['Tables']['sedi']['Row']
 
 export default function SediPage() {
+  console.log('[SEDI PAGE] Render component')
+
   const [sedi, setSedi] = useState<Sede[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -24,6 +26,7 @@ export default function SediPage() {
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
   const isLoadingRef = useRef(false)
+  const mountCountRef = useRef(0)
 
   // Carica sedi
   const loadSedi = async () => {
@@ -68,7 +71,9 @@ export default function SediPage() {
   }
 
   useEffect(() => {
-    console.log('[SEDI] useEffect mount')
+    mountCountRef.current += 1
+    const currentMount = mountCountRef.current
+    console.log('[SEDI] useEffect mount #', currentMount)
 
     // Verifica che il client Supabase sia configurato
     if (!supabase) {
@@ -76,10 +81,11 @@ export default function SediPage() {
       return
     }
 
+    console.log('[SEDI] Chiamata loadSedi dal mount #', currentMount)
     loadSedi()
 
     return () => {
-      console.log('[SEDI] useEffect cleanup')
+      console.log('[SEDI] useEffect cleanup #', currentMount)
       // Reset loading flag on unmount
       isLoadingRef.current = false
     }

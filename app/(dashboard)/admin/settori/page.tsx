@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/components/auth'
 import { ConfirmModal } from '@/components/ui/modal'
 import { SettoreModal } from '@/components/admin/settore-modal'
 import { ClasseModal } from '@/components/admin/classe-modal'
@@ -23,6 +24,7 @@ interface ClasseWithSettore extends Classe {
 }
 
 export default function SettoriPage() {
+  const { session, isLoading: isAuthLoading } = useAuth()
   const [settori, setSettori] = useState<SettoreWithCount[]>([])
   const [classi, setClassi] = useState<ClasseWithSettore[]>([])
   const [isLoadingSettori, setIsLoadingSettori] = useState(true)
@@ -43,11 +45,18 @@ export default function SettoriPage() {
   const supabase = supabaseRef.current
   const isLoadingSettoriRef = useRef(false)
   const isLoadingClassiRef = useRef(false)
+  const hasLoadedSettoriRef = useRef(false)
+  const hasLoadedClassiRef = useRef(false)
 
   // Carica settori con conteggio classi
   const loadSettori = async () => {
     if (isLoadingSettoriRef.current) {
       console.log('[SETTORI] Caricamento già in corso, skip')
+      return
+    }
+
+    if (!session) {
+      console.log('[SETTORI] Nessuna sessione attiva, skip caricamento')
       return
     }
 
@@ -91,6 +100,7 @@ export default function SettoriPage() {
 
       console.log('[SETTORI] Dati caricati:', settoriWithCount.length, 'settori')
       setSettori(settoriWithCount)
+      hasLoadedSettoriRef.current = true
     } catch (err) {
       console.error('[SETTORI] Errore caricamento settori:', err)
     } finally {
@@ -104,6 +114,11 @@ export default function SettoriPage() {
   const loadClassi = async () => {
     if (isLoadingClassiRef.current) {
       console.log('[CLASSI] Caricamento già in corso, skip')
+      return
+    }
+
+    if (!session) {
+      console.log('[CLASSI] Nessuna sessione attiva, skip caricamento')
       return
     }
 
@@ -148,6 +163,7 @@ export default function SettoriPage() {
 
       console.log('[CLASSI] Dati caricati:', classiWithSettore.length, 'classi')
       setClassi(classiWithSettore)
+      hasLoadedClassiRef.current = true
     } catch (err) {
       console.error('[CLASSI] Errore caricamento classi:', err)
     } finally {
@@ -158,15 +174,47 @@ export default function SettoriPage() {
   }
 
   useEffect(() => {
-    console.log('[SETTORI/CLASSI] useEffect mount')
-    loadSettori()
-    loadClassi()
+    console.log('[SETTORI/CLASSI] useEffect - Auth status:', {
+      isAuthLoading,
+      hasSession: !!session,
+      hasLoadedSettori: hasLoadedSettoriRef.current,
+      hasLoadedClassi: hasLoadedClassiRef.current
+    })
+
+    // Attendi che l'autenticazione sia completata
+    if (isAuthLoading) {
+      console.log('[SETTORI/CLASSI] Auth ancora in caricamento, attendo...')
+      return
+    }
+
+    // Verifica che ci sia una sessione
+    if (!session) {
+      console.error('[SETTORI/CLASSI] Nessuna sessione attiva!')
+      setIsLoadingSettori(false)
+      setIsLoadingClassi(false)
+      return
+    }
+
+    // Carica solo se non abbiamo già caricato
+    if (!hasLoadedSettoriRef.current) {
+      console.log('[SETTORI/CLASSI] Chiamata loadSettori')
+      loadSettori()
+    } else {
+      console.log('[SETTORI/CLASSI] Settori già caricati, skip')
+    }
+
+    if (!hasLoadedClassiRef.current) {
+      console.log('[SETTORI/CLASSI] Chiamata loadClassi')
+      loadClassi()
+    } else {
+      console.log('[SETTORI/CLASSI] Classi già caricate, skip')
+    }
 
     return () => {
       console.log('[SETTORI/CLASSI] useEffect cleanup')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [isAuthLoading, session])
 
   // Settori handlers
   const handleNewSettore = () => {

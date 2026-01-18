@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Building2, Plus, Pencil, Trash2, RefreshCw } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/components/auth'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/ui/badge'
 import { ConfirmModal } from '@/components/ui/modal'
@@ -17,6 +18,7 @@ type Sede = Database['public']['Tables']['sedi']['Row']
 export default function SediPage() {
   console.log('[SEDI PAGE] Render component')
 
+  const { session, isLoading: isAuthLoading } = useAuth()
   const [sedi, setSedi] = useState<Sede[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -26,12 +28,17 @@ export default function SediPage() {
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
   const isLoadingRef = useRef(false)
-  const mountCountRef = useRef(0)
+  const hasLoadedRef = useRef(false)
 
   // Carica sedi
   const loadSedi = async () => {
     if (isLoadingRef.current) {
       console.log('[SEDI] Caricamento già in corso, skip')
+      return
+    }
+
+    if (!session) {
+      console.log('[SEDI] Nessuna sessione attiva, skip caricamento')
       return
     }
 
@@ -55,6 +62,7 @@ export default function SediPage() {
 
       console.log('[SEDI] Dati caricati:', data?.length || 0, 'sedi')
       setSedi(data || [])
+      hasLoadedRef.current = true
     } catch (err: any) {
       console.error('[SEDI] Errore caricamento sedi:', err)
       console.error('[SEDI] Dettaglio errore:', {
@@ -71,26 +79,39 @@ export default function SediPage() {
   }
 
   useEffect(() => {
-    mountCountRef.current += 1
-    const currentMount = mountCountRef.current
-    console.log('[SEDI] useEffect mount #', currentMount)
+    console.log('[SEDI] useEffect - Auth status:', {
+      isAuthLoading,
+      hasSession: !!session,
+      hasLoaded: hasLoadedRef.current
+    })
 
-    // Verifica che il client Supabase sia configurato
-    if (!supabase) {
-      console.error('[SEDI] Client Supabase non configurato!')
+    // Attendi che l'autenticazione sia completata
+    if (isAuthLoading) {
+      console.log('[SEDI] Auth ancora in caricamento, attendo...')
       return
     }
 
-    console.log('[SEDI] Chiamata loadSedi dal mount #', currentMount)
-    loadSedi()
+    // Verifica che ci sia una sessione
+    if (!session) {
+      console.error('[SEDI] Nessuna sessione attiva!')
+      setIsLoading(false)
+      return
+    }
+
+    // Carica solo se non abbiamo già caricato
+    if (!hasLoadedRef.current) {
+      console.log('[SEDI] Chiamata loadSedi')
+      loadSedi()
+    } else {
+      console.log('[SEDI] Dati già caricati, skip')
+    }
 
     return () => {
-      console.log('[SEDI] useEffect cleanup #', currentMount)
-      // Reset loading flag on unmount
+      console.log('[SEDI] useEffect cleanup')
       isLoadingRef.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [isAuthLoading, session])
 
   // Apri modal nuova sede
   const handleNewSede = () => {

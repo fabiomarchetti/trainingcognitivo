@@ -15,7 +15,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-green-50">
+    <div className="h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-green-50 overflow-hidden">
       {/* Sidebar */}
       <AdminSidebar
         isOpen={sidebarOpen}
@@ -23,12 +23,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       />
 
       {/* Main Content */}
-      <div className="lg:ml-64 flex flex-col min-h-screen">
+      <div className="lg:ml-64 flex flex-col h-screen">
         {/* Header */}
         <AdminHeader onMenuClick={() => setSidebarOpen(true)} />
 
         {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-6">
+        <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
           {children}
         </main>
       </div>

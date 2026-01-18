@@ -17,93 +17,93 @@ import {
 
 export default function AdminPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header con titolo */}
-      <div className="bg-gradient-to-r from-orange-400 via-yellow-400 to-green-400 rounded-3xl p-6 text-white shadow-2xl border-4 border-white">
-        <div className="flex items-center justify-between">
+      <div className="bg-gradient-to-r from-orange-400 via-yellow-400 to-green-400 rounded-2xl p-4 text-white shadow-xl border-2 border-white">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-3xl font-black flex items-center gap-3 drop-shadow-lg">
-              <Heart className="h-8 w-8 animate-pulse" />
+            <h1 className="text-2xl lg:text-3xl font-black flex items-center gap-2 drop-shadow-lg">
+              <Heart className="h-6 w-6 lg:h-8 lg:w-8 animate-pulse" />
               Pannello Amministrativo
             </h1>
-            <p className="text-white/90 mt-2 font-semibold text-lg drop-shadow">
+            <p className="text-white/90 mt-1 font-semibold text-sm lg:text-base drop-shadow">
               🌟 Gestione completa del sistema TrainingCognitivo
             </p>
           </div>
-          <button className="flex items-center gap-2 px-5 py-3 bg-white text-green-600 rounded-2xl font-bold hover:scale-110 transition-all shadow-xl hover:shadow-2xl">
-            <RefreshCw className="h-5 w-5" />
+          <button className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white text-green-600 rounded-xl font-bold hover:scale-105 transition-all shadow-lg">
+            <RefreshCw className="h-4 w-4" />
             Aggiorna
           </button>
         </div>
       </div>
 
       {/* Statistiche */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           label="Utenti Totali"
           value="--"
-          icon={<Users className="h-8 w-8 text-red-500" />}
+          icon={<Users className="h-6 w-6 text-red-500" />}
           bgColor="bg-red-50"
           borderColor="border-red-200"
         />
         <StatCard
           label="Amministratori"
           value="--"
-          icon={<UserCheck className="h-8 w-8 text-green-500" />}
+          icon={<UserCheck className="h-6 w-6 text-green-500" />}
           bgColor="bg-green-50"
           borderColor="border-green-200"
         />
         <StatCard
           label="Educatori"
           value="--"
-          icon={<GraduationCap className="h-8 w-8 text-blue-500" />}
+          icon={<GraduationCap className="h-6 w-6 text-blue-500" />}
           bgColor="bg-blue-50"
           borderColor="border-blue-200"
         />
         <StatCard
           label="Utenti"
           value="--"
-          icon={<Heart className="h-8 w-8 text-emerald-500" />}
+          icon={<Heart className="h-6 w-6 text-emerald-500" />}
           bgColor="bg-emerald-50"
           borderColor="border-emerald-200"
         />
       </div>
 
       {/* Azioni Rapide */}
-      <div className="bg-white rounded-3xl p-6 shadow-xl border-4 border-cyan-200">
-        <h2 className="text-xl font-black text-gray-800 mb-4 flex items-center gap-2">
+      <div className="bg-white rounded-2xl p-4 shadow-lg border-2 border-cyan-200">
+        <h2 className="text-lg font-black text-gray-800 mb-3 flex items-center gap-2">
           ⚡ Azioni Rapide
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <ActionButton
             href="/admin/utenti"
             label="Nuovo Utente"
-            icon={<UserPlus className="h-5 w-5" />}
+            icon={<UserPlus className="h-4 w-4" />}
             bgColor="bg-gradient-to-r from-red-400 to-red-500"
           />
           <ActionButton
             href="/admin/utenti"
             label="Gestisci Utenti"
-            icon={<Users className="h-5 w-5" />}
+            icon={<Users className="h-4 w-4" />}
             bgColor="bg-gradient-to-r from-amber-400 to-amber-500"
           />
           <ActionButton
             href="/admin/log-accessi"
             label="Visualizza Log"
-            icon={<FileText className="h-5 w-5" />}
+            icon={<FileText className="h-4 w-4" />}
             bgColor="bg-gradient-to-r from-cyan-400 to-cyan-500"
           />
           <ActionButton
             href="/admin/impostazioni"
             label="Sistema"
-            icon={<Settings className="h-5 w-5" />}
+            icon={<Settings className="h-4 w-4" />}
             bgColor="bg-gradient-to-r from-gray-400 to-gray-500"
           />
         </div>
       </div>
 
       {/* Sezioni di gestione */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <QuickLinkCard
           href="/admin/sedi"
           title="Gestione Sedi"
@@ -159,10 +159,10 @@ function StatCard({
   borderColor: string
 }) {
   return (
-    <div className={`${bgColor} ${borderColor} border-4 rounded-3xl p-5 flex items-center justify-between shadow-lg hover:shadow-xl transition-shadow`}>
+    <div className={`${bgColor} ${borderColor} border-2 rounded-2xl p-3 lg:p-4 flex items-center justify-between shadow-md hover:shadow-lg transition-shadow`}>
       <div>
-        <p className="text-sm text-gray-600 font-medium">{label}</p>
-        <p className="text-3xl font-bold text-gray-800 mt-1">{value}</p>
+        <p className="text-xs lg:text-sm text-gray-600 font-medium">{label}</p>
+        <p className="text-xl lg:text-2xl font-bold text-gray-800 mt-0.5">{value}</p>
       </div>
       {icon}
     </div>
@@ -184,10 +184,10 @@ function ActionButton({
     <Link
       href={href}
       prefetch={false}
-      className={`${bgColor} text-white rounded-2xl py-4 px-5 flex items-center justify-center gap-2 font-bold hover:scale-110 transition-all shadow-lg hover:shadow-2xl`}
+      className={`${bgColor} text-white rounded-xl py-2.5 px-3 lg:py-3 lg:px-4 flex items-center justify-center gap-1.5 text-xs lg:text-sm font-bold hover:scale-105 transition-all shadow-md hover:shadow-lg`}
     >
       {icon}
-      {label}
+      <span className="hidden sm:inline">{label}</span>
     </Link>
   )
 }
@@ -225,10 +225,10 @@ function QuickLinkCard({
     <Link
       href={href}
       prefetch={false}
-      className={`bg-white rounded-3xl p-6 border-4 border-gray-200 transition-all duration-200 ${colorClasses[color]} shadow-lg hover:shadow-2xl hover:scale-105`}
+      className={`bg-white rounded-2xl p-4 lg:p-5 border-2 border-gray-200 transition-all duration-200 ${colorClasses[color]} shadow-md hover:shadow-lg hover:scale-105`}
     >
-      <h3 className={`text-lg font-semibold ${titleColors[color]}`}>{title}</h3>
-      <p className="text-sm text-gray-500 mt-1">{description}</p>
+      <h3 className={`text-sm lg:text-base font-semibold ${titleColors[color]}`}>{title}</h3>
+      <p className="text-xs text-gray-500 mt-1 hidden sm:block">{description}</p>
     </Link>
   )
 }

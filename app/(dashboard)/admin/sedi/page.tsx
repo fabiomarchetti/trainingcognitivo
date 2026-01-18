@@ -3,7 +3,7 @@
  */
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Building2, Plus, Pencil, Trash2, RefreshCw } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -23,9 +23,13 @@ export default function SediPage() {
   const [sedeToDelete, setSedeToDelete] = useState<Sede | null>(null)
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
+  const isLoadingRef = useRef(false)
 
   // Carica sedi
-  const loadSedi = useCallback(async () => {
+  const loadSedi = async () => {
+    if (isLoadingRef.current) return
+    isLoadingRef.current = true
+
     setIsLoading(true)
     try {
       const { data, error } = await supabase
@@ -39,13 +43,14 @@ export default function SediPage() {
       console.error('Errore caricamento sedi:', err)
     } finally {
       setIsLoading(false)
+      isLoadingRef.current = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }
 
   useEffect(() => {
     loadSedi()
-  }, [loadSedi])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Apri modal nuova sede
   const handleNewSede = () => {

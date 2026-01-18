@@ -3,7 +3,7 @@
  */
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { ConfirmModal } from '@/components/ui/modal'
@@ -41,9 +41,14 @@ export default function SettoriPage() {
   const [classeToDelete, setClasseToDelete] = useState<Classe | null>(null)
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
+  const isLoadingSettoriRef = useRef(false)
+  const isLoadingClassiRef = useRef(false)
 
   // Carica settori con conteggio classi
-  const loadSettori = useCallback(async () => {
+  const loadSettori = async () => {
+    if (isLoadingSettoriRef.current) return
+    isLoadingSettoriRef.current = true
+
     setIsLoadingSettori(true)
     try {
       // Query 1: Ottieni tutti i settori
@@ -78,12 +83,15 @@ export default function SettoriPage() {
       console.error('Errore caricamento settori:', err)
     } finally {
       setIsLoadingSettori(false)
+      isLoadingSettoriRef.current = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }
 
   // Carica classi con nome settore
-  const loadClassi = useCallback(async () => {
+  const loadClassi = async () => {
+    if (isLoadingClassiRef.current) return
+    isLoadingClassiRef.current = true
+
     setIsLoadingClassi(true)
     try {
       // Query 1: Ottieni tutte le classi
@@ -119,14 +127,15 @@ export default function SettoriPage() {
       console.error('Errore caricamento classi:', err)
     } finally {
       setIsLoadingClassi(false)
+      isLoadingClassiRef.current = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }
 
   useEffect(() => {
     loadSettori()
     loadClassi()
-  }, [loadSettori, loadClassi])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Settori handlers
   const handleNewSettore = () => {

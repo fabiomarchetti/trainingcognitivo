@@ -124,7 +124,7 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-gradient-to-b from-cyan-400 via-teal-400 to-green-500 text-white transition-transform duration-300 lg:translate-x-0 flex flex-col shadow-xl',
+          'fixed top-0 left-0 z-50 h-screen w-64 bg-gradient-to-b from-cyan-400 via-teal-400 to-green-500 text-white transition-transform duration-300 lg:translate-x-0 flex flex-col shadow-xl',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >

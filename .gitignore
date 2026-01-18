@@ -39,4 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-supabase/esportazione_tabelle_aruba/
+
+# supabase - esportazioni vecchie tabelle
+supabase/
+
+# documenti interni
+documenti/

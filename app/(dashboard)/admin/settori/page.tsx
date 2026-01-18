@@ -46,7 +46,12 @@ export default function SettoriPage() {
 
   // Carica settori con conteggio classi
   const loadSettori = async () => {
-    if (isLoadingSettoriRef.current) return
+    if (isLoadingSettoriRef.current) {
+      console.log('[SETTORI] Caricamento già in corso, skip')
+      return
+    }
+
+    console.log('[SETTORI] Inizio caricamento')
     isLoadingSettoriRef.current = true
 
     setIsLoadingSettori(true)
@@ -58,14 +63,20 @@ export default function SettoriPage() {
         .order('ordine', { ascending: true })
         .order('nome', { ascending: true })
 
-      if (settoriError) throw settoriError
+      if (settoriError) {
+        console.error('[SETTORI] Errore query settori:', settoriError)
+        throw settoriError
+      }
 
       // Query 2: Conta le classi per ogni settore
       const { data: classiData, error: classiError } = await supabase
         .from('classi')
         .select('id_settore')
 
-      if (classiError) throw classiError
+      if (classiError) {
+        console.error('[SETTORI] Errore query classi count:', classiError)
+        throw classiError
+      }
 
       // Combina i risultati
       const classiCounts = classiData?.reduce((acc, classe) => {
@@ -78,18 +89,25 @@ export default function SettoriPage() {
         classi_count: classiCounts[s.id] || 0,
       }))
 
+      console.log('[SETTORI] Dati caricati:', settoriWithCount.length, 'settori')
       setSettori(settoriWithCount)
     } catch (err) {
-      console.error('Errore caricamento settori:', err)
+      console.error('[SETTORI] Errore caricamento settori:', err)
     } finally {
       setIsLoadingSettori(false)
       isLoadingSettoriRef.current = false
+      console.log('[SETTORI] Fine caricamento')
     }
   }
 
   // Carica classi con nome settore
   const loadClassi = async () => {
-    if (isLoadingClassiRef.current) return
+    if (isLoadingClassiRef.current) {
+      console.log('[CLASSI] Caricamento già in corso, skip')
+      return
+    }
+
+    console.log('[CLASSI] Inizio caricamento')
     isLoadingClassiRef.current = true
 
     setIsLoadingClassi(true)
@@ -101,14 +119,20 @@ export default function SettoriPage() {
         .order('ordine', { ascending: true })
         .order('nome', { ascending: true })
 
-      if (classiError) throw classiError
+      if (classiError) {
+        console.error('[CLASSI] Errore query classi:', classiError)
+        throw classiError
+      }
 
       // Query 2: Ottieni tutti i settori
       const { data: settoriData, error: settoriError } = await supabase
         .from('settori')
         .select('id, nome')
 
-      if (settoriError) throw settoriError
+      if (settoriError) {
+        console.error('[CLASSI] Errore query settori:', settoriError)
+        throw settoriError
+      }
 
       // Crea mappa settori per lookup veloce
       const settoriMap = settoriData?.reduce((acc, settore) => {
@@ -122,18 +146,25 @@ export default function SettoriPage() {
         settore_nome: settoriMap[c.id_settore] || '-',
       }))
 
+      console.log('[CLASSI] Dati caricati:', classiWithSettore.length, 'classi')
       setClassi(classiWithSettore)
     } catch (err) {
-      console.error('Errore caricamento classi:', err)
+      console.error('[CLASSI] Errore caricamento classi:', err)
     } finally {
       setIsLoadingClassi(false)
       isLoadingClassiRef.current = false
+      console.log('[CLASSI] Fine caricamento')
     }
   }
 
   useEffect(() => {
+    console.log('[SETTORI/CLASSI] useEffect mount')
     loadSettori()
     loadClassi()
+
+    return () => {
+      console.log('[SETTORI/CLASSI] useEffect cleanup')
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

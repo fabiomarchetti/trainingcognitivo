@@ -27,7 +27,12 @@ export default function SediPage() {
 
   // Carica sedi
   const loadSedi = async () => {
-    if (isLoadingRef.current) return
+    if (isLoadingRef.current) {
+      console.log('[SEDI] Caricamento già in corso, skip')
+      return
+    }
+
+    console.log('[SEDI] Inizio caricamento')
     isLoadingRef.current = true
 
     setIsLoading(true)
@@ -37,18 +42,44 @@ export default function SediPage() {
         .select('*')
         .order('nome', { ascending: true })
 
-      if (error) throw error
+      if (error) {
+        console.error('[SEDI] Errore query:', error)
+        throw error
+      }
+
+      console.log('[SEDI] Dati caricati:', data?.length || 0, 'sedi')
       setSedi(data || [])
-    } catch (err) {
-      console.error('Errore caricamento sedi:', err)
+    } catch (err: any) {
+      console.error('[SEDI] Errore caricamento sedi:', err)
+      console.error('[SEDI] Dettaglio errore:', {
+        message: err?.message,
+        code: err?.code,
+        details: err?.details,
+        hint: err?.hint
+      })
     } finally {
       setIsLoading(false)
       isLoadingRef.current = false
+      console.log('[SEDI] Fine caricamento')
     }
   }
 
   useEffect(() => {
+    console.log('[SEDI] useEffect mount')
+
+    // Verifica che il client Supabase sia configurato
+    if (!supabase) {
+      console.error('[SEDI] Client Supabase non configurato!')
+      return
+    }
+
     loadSedi()
+
+    return () => {
+      console.log('[SEDI] useEffect cleanup')
+      // Reset loading flag on unmount
+      isLoadingRef.current = false
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

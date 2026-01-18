@@ -66,41 +66,71 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null)
     setProfile(null)
 
+    // Prova signOut Supabase con timeout
     try {
       console.log('[AUTH PROVIDER] Chiamata signOut Supabase...')
 
-      // Prova a fare signOut da Supabase
-      const { error } = await supabase.auth.signOut({ scope: 'local' })
+      // Promise con timeout di 2 secondi
+      const signOutPromise = supabase.auth.signOut({ scope: 'local' })
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout')), 2000)
+      )
+
+      const { error } = await Promise.race([signOutPromise, timeoutPromise]) as any
 
       if (error) {
         console.error('[AUTH PROVIDER] Errore signOut Supabase:', error)
       } else {
         console.log('[AUTH PROVIDER] SignOut Supabase OK')
       }
-    } catch (error) {
-      console.error('[AUTH PROVIDER] Catch errore signOut:', error)
+    } catch (error: any) {
+      if (error?.message === 'Timeout') {
+        console.warn('[AUTH PROVIDER] SignOut Supabase timeout - procedo comunque')
+      } else {
+        console.error('[AUTH PROVIDER] Catch errore signOut:', error)
+      }
     }
 
     // Forza cancellazione manuale da localStorage
+    console.log('[AUTH PROVIDER] Pulizia manuale localStorage...')
     try {
-      console.log('[AUTH PROVIDER] Pulizia manuale localStorage...')
       // Supabase salva la sessione in chiavi che iniziano con 'sb-'
       const keysToRemove = Object.keys(localStorage).filter(key =>
         key.startsWith('sb-') || key.includes('supabase')
       )
-      keysToRemove.forEach(key => {
-        console.log('[AUTH PROVIDER] Rimuovo chiave:', key)
-        localStorage.removeItem(key)
-      })
-      console.log('[AUTH PROVIDER] localStorage pulito')
+
+      if (keysToRemove.length === 0) {
+        console.log('[AUTH PROVIDER] Nessuna chiave da rimuovere')
+      } else {
+        keysToRemove.forEach(key => {
+          console.log('[AUTH PROVIDER] Rimuovo chiave:', key)
+          localStorage.removeItem(key)
+        })
+        console.log('[AUTH PROVIDER] localStorage pulito -', keysToRemove.length, 'chiavi rimosse')
+      }
     } catch (error) {
       console.error('[AUTH PROVIDER] Errore pulizia localStorage:', error)
     }
 
+    // Forza anche cancellazione cookies se possibile
+    try {
+      console.log('[AUTH PROVIDER] Tentativo pulizia cookies...')
+      document.cookie.split(';').forEach(cookie => {
+        const name = cookie.split('=')[0].trim()
+        if (name.startsWith('sb-') || name.includes('supabase')) {
+          console.log('[AUTH PROVIDER] Rimuovo cookie:', name)
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+        }
+      })
+      console.log('[AUTH PROVIDER] Cookies puliti')
+    } catch (error) {
+      console.error('[AUTH PROVIDER] Errore pulizia cookies:', error)
+    }
+
     // Redirect FORZATO al login
-    console.log('[AUTH PROVIDER] Redirect al login...')
+    console.log('[AUTH PROVIDER] Redirect al login in 200ms...')
     setTimeout(() => {
-      console.log('[AUTH PROVIDER] Eseguo redirect')
+      console.log('[AUTH PROVIDER] Eseguo redirect a /login')
       window.location.href = '/login'
     }, 200)
   }

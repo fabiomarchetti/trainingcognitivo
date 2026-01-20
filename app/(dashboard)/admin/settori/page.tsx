@@ -3,7 +3,7 @@
  */
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/auth'
@@ -33,6 +33,9 @@ export default function SettoriPage() {
   const [sedi, setSedi] = useState<Sede[]>([])
   const [isLoadingSettori, setIsLoadingSettori] = useState(true)
   const [isLoadingClassi, setIsLoadingClassi] = useState(true)
+
+  // Filtri
+  const [filtroSedeId, setFiltroSedeId] = useState<number | 'all' | 'null'>('all')
 
   // Settori modal states
   const [isSettoreModalOpen, setIsSettoreModalOpen] = useState(false)
@@ -204,6 +207,17 @@ export default function SettoriPage() {
     }
   }
 
+  // Filtra settori in base alla sede selezionata
+  const settoriFiltrati = useMemo(() => {
+    if (filtroSedeId === 'all') {
+      return settori
+    }
+    if (filtroSedeId === 'null') {
+      return settori.filter(s => !s.id_sede)
+    }
+    return settori.filter(s => s.id_sede === filtroSedeId)
+  }, [settori, filtroSedeId])
+
   useEffect(() => {
     console.log('[SETTORI/CLASSI] useEffect - Auth status:', {
       isAuthLoading,
@@ -330,15 +344,40 @@ export default function SettoriPage() {
       {/* ========== CARD SETTORI ========== */}
       <div className="bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden">
         {/* Header Settori */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">Gestione Settori</h2>
-          <button
-            onClick={handleNewSettore}
-            className="flex items-center gap-2 px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded text-sm font-medium transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Nuovo Settore
-          </button>
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xl font-semibold text-gray-900">Gestione Settori</h2>
+            <button
+              onClick={handleNewSettore}
+              className="flex items-center gap-2 px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded text-sm font-medium transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Nuovo Settore
+            </button>
+          </div>
+          {/* Filtro Sede */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700">Filtra per sede:</label>
+            <select
+              value={filtroSedeId}
+              onChange={(e) => {
+                const val = e.target.value
+                setFiltroSedeId(val === 'all' ? 'all' : val === 'null' ? 'null' : Number(val))
+              }}
+              className="px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+            >
+              <option value="all">Tutte le sedi ({settori.length})</option>
+              {sedi.map(sede => {
+                const count = settori.filter(s => s.id_sede === sede.id).length
+                return (
+                  <option key={sede.id} value={sede.id}>
+                    {sede.nome} ({count})
+                  </option>
+                )
+              })}
+              <option value="null">Senza sede ({settori.filter(s => !s.id_sede).length})</option>
+            </select>
+          </div>
         </div>
 
         {/* Tabella Settori */}
@@ -347,9 +386,11 @@ export default function SettoriPage() {
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-gray-600 mx-auto" />
             </div>
-          ) : settori.length === 0 ? (
+          ) : settoriFiltrati.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
-              Nessun settore presente
+              {settori.length === 0
+                ? 'Nessun settore presente'
+                : 'Nessun settore trovato con il filtro selezionato'}
             </div>
           ) : (
             <table className="w-full">
@@ -362,7 +403,7 @@ export default function SettoriPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {settori.map((settore) => (
+                {settoriFiltrati.map((settore) => (
                   <tr key={settore.id} className="hover:bg-gray-50">
                     <td className="px-6 py-3 text-sm text-gray-900">{settore.nome}</td>
                     <td className="px-6 py-3 text-sm text-gray-600">

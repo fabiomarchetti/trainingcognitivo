@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { X, Users, Save, FileText } from 'lucide-react'
+import { X, Users, Save, FileText, FolderTree } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { classeSchema, type ClasseFormData } from '@/lib/utils/validation'
 import { Button } from '@/components/ui/button'
@@ -150,14 +150,17 @@ export function ClasseModal({ isOpen, onClose, onSuccess, classe, settori }: Cla
               <label className="block text-sm font-bold text-gray-700 mb-2">
                 Settore di Riferimento *
               </label>
-              <Select
-                className="h-12 rounded-xl border-2 border-gray-300 focus:border-teal-400 text-base font-semibold"
-                disabled={isLoading}
-                error={errors.id_settore?.message as string}
-                placeholder="Seleziona settore..."
-                options={settori.map(s => ({ value: s.id, label: s.nome }))}
-                {...register('id_settore', { valueAsNumber: true })}
-              />
+              <div className="relative">
+                <FolderTree className="absolute left-3 top-3.5 h-5 w-5 text-teal-500 pointer-events-none z-10" />
+                <Select
+                  className="h-12 pl-11 rounded-xl border-2 border-gray-300 focus:border-teal-400 text-base font-semibold appearance-none"
+                  disabled={isLoading}
+                  error={errors.id_settore?.message as string}
+                  placeholder="Seleziona settore..."
+                  options={settori.map(s => ({ value: s.id, label: s.nome }))}
+                  {...register('id_settore', { valueAsNumber: true })}
+                />
+              </div>
               <p className="text-xs text-gray-500 mt-1">
                 Le classi sono associate a un settore specifico
               </p>

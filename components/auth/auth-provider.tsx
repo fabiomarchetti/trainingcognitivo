@@ -147,84 +147,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initAuth = async () => {
       if (!isMounted) return
-      setIsLoading(true)
 
-      // Timeout di sicurezza: se dopo 30 secondi non abbiamo una risposta, forziamo l'uscita
+      // Non usiamo più getSession() perché in produzione è troppo lento
+      // Ci affidiamo completamente al listener onAuthStateChange
+      console.log('[AUTH PROVIDER] Init - Attendo listener per sessione...')
+
+      // Safety timeout: se dopo 10 secondi non abbiamo sessione, usciamo da loading
       const safetyTimeout = setTimeout(() => {
         if (isMounted) {
-          console.error('[AUTH PROVIDER] TIMEOUT: Autenticazione bloccata dopo 30s, forzo uscita da isLoading')
+          console.warn('[AUTH PROVIDER] Nessuna sessione dopo 10s, esco da loading')
           setIsLoading(false)
         }
-      }, 30000)
+      }, 10000)
 
-      try {
-        console.log('[AUTH PROVIDER] Getting session...')
-
-        // Ottieni sessione corrente con race condition per timeout
-        const getSessionPromise = supabase.auth.getSession()
-        const timeoutPromise = new Promise<any>((resolve) =>
-          setTimeout(() => {
-            console.warn('[AUTH PROVIDER] getSession() timeout dopo 5s, continuo senza sessione')
-            resolve({ data: { session: null }, error: null })
-          }, 5000)
-        )
-
-        const { data: { session: currentSession }, error } = await Promise.race([
-          getSessionPromise,
-          timeoutPromise
-        ])
-
-        if (!isMounted) {
-          console.log('[AUTH PROVIDER] Component unmounted, skipping')
-          clearTimeout(safetyTimeout)
-          return
-        }
-
-        if (error) {
-          console.error('[AUTH PROVIDER] Errore getSession:', error)
-          setIsLoading(false)
-          clearTimeout(safetyTimeout)
-          return
-        }
-
-        console.log('[AUTH PROVIDER] Session retrieved:', !!currentSession)
-        console.log('[AUTH PROVIDER] Session details:', {
-          hasUser: !!currentSession?.user,
-          userId: currentSession?.user?.id,
-          expiresAt: currentSession?.expires_at
-        })
-
-        if (currentSession?.user && isMounted) {
-          setSession(currentSession)
-          console.log('[AUTH PROVIDER] Loading profile for user:', currentSession.user.id)
-          const profileData = await loadProfile(currentSession.user.id)
-          console.log('[AUTH PROVIDER] Profile loaded:', !!profileData, profileData?.ruolo)
-          if (isMounted) {
-            setUser({
-              ...currentSession.user,
-              profile: profileData,
-            })
-          }
-        }
-      } catch (error: any) {
-        if (!isMounted) return
-        console.error('[AUTH PROVIDER] Errore init:', error)
-        console.error('[AUTH PROVIDER] Error details:', {
-          name: error?.name,
-          message: error?.message,
-          code: error?.code
-        })
-        // Ignora AbortError - succede durante navigazione
-        if (error?.name !== 'AbortError' && error?.message?.indexOf('AbortError') === -1) {
-          console.error('[AUTH PROVIDER] Errore non-abort:', error)
-        }
-      } finally {
-        clearTimeout(safetyTimeout)
-        if (isMounted) {
-          console.log('[AUTH PROVIDER] Completamento init, isLoading -> false')
-          setIsLoading(false)
-        }
-      }
+      // Cleanup del timeout quando la sessione arriva dal listener
+      return () => clearTimeout(safetyTimeout)
     }
 
     // Setup auth state listener
@@ -232,20 +169,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data } = supabase.auth.onAuthStateChange(
         async (event, newSession) => {
           if (!isMounted) return
-          console.log('[AUTH PROVIDER] Auth state changed:', event)
+          console.log('[AUTH PROVIDER] Auth state changed:', event, 'hasSession:', !!newSession)
+
           setSession(newSession)
 
-          if (event === 'SIGNED_IN' && newSession?.user && isMounted) {
+          if (event === 'INITIAL_SESSION') {
+            // Prima sessione caricata - esci da loading
+            console.log('[AUTH PROVIDER] Sessione iniziale caricata')
+            if (newSession?.user && isMounted) {
+              const profileData = await loadProfile(newSession.user.id)
+              console.log('[AUTH PROVIDER] Profile caricato:', !!profileData, profileData?.ruolo)
+              if (isMounted) {
+                setUser({
+                  ...newSession.user,
+                  profile: profileData,
+                })
+              }
+            }
+            if (isMounted) {
+              console.log('[AUTH PROVIDER] Fine init da listener, isLoading -> false')
+              setIsLoading(false)
+            }
+          } else if (event === 'SIGNED_IN' && newSession?.user && isMounted) {
             const profileData = await loadProfile(newSession.user.id)
             if (isMounted) {
               setUser({
                 ...newSession.user,
                 profile: profileData,
               })
+              setIsLoading(false)
             }
           } else if (event === 'SIGNED_OUT' && isMounted) {
             setUser(null)
             setProfile(null)
+            setIsLoading(false)
           } else if (event === 'TOKEN_REFRESHED' && newSession?.user && isMounted) {
             setUser(prev => prev ? { ...prev, ...newSession.user } : null)
           }

@@ -99,29 +99,27 @@ export default function SediPage() {
       isAuthLoading,
       hasSession: !!session,
       hasLoaded: hasLoadedRef.current,
+      isCurrentlyLoading: isLoadingRef.current,
       userId: session?.user?.id
     })
 
-    // Se auth ancora in caricamento MA già abbiamo caricato i dati, non fare nulla
+    // Se abbiamo già caricato i dati, non fare nulla
     if (hasLoadedRef.current) {
       console.log('[SEDI] Dati già caricati, skip tutto')
       setIsLoading(false)
       return
     }
 
-    // Attendi max 2 secondi per l'auth, poi procedi comunque
-    if (isAuthLoading) {
-      console.log('[SEDI] Auth ancora in caricamento, attendo con timeout...')
-      const authTimeout = setTimeout(() => {
-        console.warn('[SEDI] Timeout auth, provo a caricare comunque')
-        if (!hasLoadedRef.current) {
-          loadSedi()
-        }
-      }, 2000)
+    // Se stiamo già caricando, non fare nulla
+    if (isLoadingRef.current) {
+      console.log('[SEDI] Caricamento già in corso da precedente chiamata, skip')
+      return
+    }
 
-      return () => {
-        clearTimeout(authTimeout)
-      }
+    // Attendi che l'autenticazione sia completata
+    if (isAuthLoading) {
+      console.log('[SEDI] Auth ancora in caricamento, attendo...')
+      return
     }
 
     // Se auth completata ma nessuna sessione, mostra errore
@@ -132,15 +130,12 @@ export default function SediPage() {
       return
     }
 
-    // Carica solo se non abbiamo già caricato
-    if (!hasLoadedRef.current) {
-      console.log('[SEDI] Chiamata loadSedi')
-      loadSedi()
-    }
+    // Carica solo se non abbiamo già caricato e non stiamo già caricando
+    console.log('[SEDI] Chiamata loadSedi')
+    loadSedi()
 
     return () => {
       console.log('[SEDI] useEffect cleanup')
-      isLoadingRef.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthLoading, session])

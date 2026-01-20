@@ -21,6 +21,7 @@ export default function SediPage() {
   const { session, isLoading: isAuthLoading } = useAuth()
   const [sedi, setSedi] = useState<Sede[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedSede, setSelectedSede] = useState<Sede | null>(null)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
@@ -39,15 +40,24 @@ export default function SediPage() {
 
     if (!session) {
       console.log('[SEDI] Nessuna sessione attiva, skip caricamento')
+      setError('Sessione non disponibile. Effettua il login.')
       return
     }
 
-    console.log('[SEDI] Inizio caricamento')
+    console.log('[SEDI] Inizio caricamento', {
+      hasSession: !!session,
+      userId: session?.user?.id
+    })
     isLoadingRef.current = true
 
     setIsLoading(true)
+    setError(null)
     try {
       console.log('[SEDI] Avvio query Supabase...')
+      console.log('[SEDI] Supabase client config:', {
+        hasClient: !!supabase
+      })
+
       const { data, error } = await supabase
         .from('sedi')
         .select('*')
@@ -57,6 +67,7 @@ export default function SediPage() {
 
       if (error) {
         console.error('[SEDI] Errore query:', error)
+        setError(`Errore caricamento sedi: ${error.message}`)
         throw error
       }
 
@@ -66,11 +77,16 @@ export default function SediPage() {
     } catch (err: any) {
       console.error('[SEDI] Errore caricamento sedi:', err)
       console.error('[SEDI] Dettaglio errore:', {
+        name: err?.name,
         message: err?.message,
         code: err?.code,
         details: err?.details,
-        hint: err?.hint
+        hint: err?.hint,
+        status: err?.status
       })
+      if (!error) {
+        setError(`Errore: ${err?.message || 'Errore sconosciuto'}`)
+      }
     } finally {
       setIsLoading(false)
       isLoadingRef.current = false
@@ -82,7 +98,8 @@ export default function SediPage() {
     console.log('[SEDI] useEffect - Auth status:', {
       isAuthLoading,
       hasSession: !!session,
-      hasLoaded: hasLoadedRef.current
+      hasLoaded: hasLoadedRef.current,
+      userId: session?.user?.id
     })
 
     // Attendi che l'autenticazione sia completata
@@ -95,6 +112,7 @@ export default function SediPage() {
     if (!session) {
       console.error('[SEDI] Nessuna sessione attiva!')
       setIsLoading(false)
+      setError('Sessione non trovata. Accedi nuovamente.')
       return
     }
 
@@ -104,6 +122,7 @@ export default function SediPage() {
       loadSedi()
     } else {
       console.log('[SEDI] Dati già caricati, skip')
+      setIsLoading(false)
     }
 
     return () => {
@@ -193,10 +212,33 @@ export default function SediPage() {
 
       {/* Tabella Sedi */}
       <div className="bg-white rounded-3xl shadow-xl border-4 border-cyan-200 overflow-hidden">
-        {isLoading ? (
+        {error ? (
+          <div className="p-12 text-center">
+            <div className="bg-red-100 border-4 border-red-400 rounded-2xl p-6 mb-4">
+              <p className="text-red-700 font-bold text-lg mb-2">Errore</p>
+              <p className="text-red-600">{error}</p>
+              <p className="text-gray-600 text-sm mt-4">
+                Controlla la console del browser per maggiori dettagli
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setError(null)
+                hasLoadedRef.current = false
+                loadSedi()
+              }}
+              className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all"
+            >
+              Riprova
+            </button>
+          </div>
+        ) : isLoading ? (
           <div className="p-12 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-cyan-200 border-t-cyan-600 mx-auto mb-4" />
             <p className="text-gray-600 font-semibold">Caricamento sedi...</p>
+            <p className="text-gray-400 text-sm mt-2">
+              {isAuthLoading ? 'Verifica autenticazione...' : 'Caricamento dati...'}
+            </p>
           </div>
         ) : sedi.length === 0 ? (
           <div className="p-12 text-center">

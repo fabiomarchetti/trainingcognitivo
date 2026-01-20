@@ -137,13 +137,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Init e listener auth state
   useEffect(() => {
-    console.log('[AUTH PROVIDER] Init')
+    console.log('[AUTH PROVIDER] Init - Environment check:', {
+      hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...'
+    })
     let isMounted = true
     let subscription: any = null
 
     const initAuth = async () => {
       if (!isMounted) return
       setIsLoading(true)
+
+      // Timeout di sicurezza: se dopo 10 secondi non abbiamo una risposta, forziamo l'uscita
+      const safetyTimeout = setTimeout(() => {
+        if (isMounted && isLoading) {
+          console.error('[AUTH PROVIDER] TIMEOUT: Autenticazione bloccata, forzo uscita da isLoading')
+          setIsLoading(false)
+        }
+      }, 10000)
 
       try {
         console.log('[AUTH PROVIDER] Getting session...')
@@ -152,20 +164,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (!isMounted) {
           console.log('[AUTH PROVIDER] Component unmounted, skipping')
+          clearTimeout(safetyTimeout)
           return
         }
 
         if (error) {
           console.error('[AUTH PROVIDER] Errore getSession:', error)
           setIsLoading(false)
+          clearTimeout(safetyTimeout)
           return
         }
 
         console.log('[AUTH PROVIDER] Session retrieved:', !!currentSession)
+        console.log('[AUTH PROVIDER] Session details:', {
+          hasUser: !!currentSession?.user,
+          userId: currentSession?.user?.id,
+          expiresAt: currentSession?.expires_at
+        })
 
         if (currentSession?.user && isMounted) {
           setSession(currentSession)
+          console.log('[AUTH PROVIDER] Loading profile for user:', currentSession.user.id)
           const profileData = await loadProfile(currentSession.user.id)
+          console.log('[AUTH PROVIDER] Profile loaded:', !!profileData, profileData?.ruolo)
           if (isMounted) {
             setUser({
               ...currentSession.user,
@@ -176,12 +197,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error: any) {
         if (!isMounted) return
         console.error('[AUTH PROVIDER] Errore init:', error)
+        console.error('[AUTH PROVIDER] Error details:', {
+          name: error?.name,
+          message: error?.message,
+          code: error?.code
+        })
         // Ignora AbortError - succede durante navigazione
         if (error?.name !== 'AbortError' && error?.message?.indexOf('AbortError') === -1) {
           console.error('[AUTH PROVIDER] Errore non-abort:', error)
         }
       } finally {
+        clearTimeout(safetyTimeout)
         if (isMounted) {
+          console.log('[AUTH PROVIDER] Completamento init, isLoading -> false')
           setIsLoading(false)
         }
       }

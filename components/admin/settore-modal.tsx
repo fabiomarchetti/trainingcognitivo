@@ -6,24 +6,27 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { X, FolderTree, Save, FileText } from 'lucide-react'
+import { X, FolderTree, Save, FileText, Building2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { settoreSchema, type SettoreFormData } from '@/lib/utils/validation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Select } from '@/components/ui/select'
 import type { Database } from '@/lib/supabase/types'
 
 type Settore = Database['public']['Tables']['settori']['Row']
+type Sede = Database['public']['Tables']['sedi']['Row']
 
 interface SettoreModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
   settore?: Settore | null
+  sedi: Sede[]
 }
 
-export function SettoreModal({ isOpen, onClose, onSuccess, settore }: SettoreModalProps) {
+export function SettoreModal({ isOpen, onClose, onSuccess, settore, sedi }: SettoreModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const isEdit = !!settore
@@ -38,6 +41,7 @@ export function SettoreModal({ isOpen, onClose, onSuccess, settore }: SettoreMod
     defaultValues: {
       nome: '',
       descrizione: '',
+      id_sede: null,
     },
   })
 
@@ -46,11 +50,13 @@ export function SettoreModal({ isOpen, onClose, onSuccess, settore }: SettoreMod
       reset({
         nome: settore.nome || '',
         descrizione: settore.descrizione || '',
+        id_sede: settore.id_sede || null,
       })
     } else {
       reset({
         nome: '',
         descrizione: '',
+        id_sede: null,
       })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -70,6 +76,7 @@ export function SettoreModal({ isOpen, onClose, onSuccess, settore }: SettoreMod
           .update({
             nome: data.nome,
             descrizione: data.descrizione || null,
+            id_sede: data.id_sede || null,
           })
           .eq('id', settore.id)
 
@@ -81,6 +88,7 @@ export function SettoreModal({ isOpen, onClose, onSuccess, settore }: SettoreMod
           .insert({
             nome: data.nome,
             descrizione: data.descrizione || null,
+            id_sede: data.id_sede || null,
             ordine: 0,
             stato: 'attivo',
           })
@@ -151,6 +159,32 @@ export function SettoreModal({ isOpen, onClose, onSuccess, settore }: SettoreMod
               />
               <p className="text-xs text-gray-500 mt-1">
                 Il nome del settore sarà utilizzato per organizzare educatori e utenti
+              </p>
+            </div>
+
+            {/* Sede */}
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Sede
+              </label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-3.5 h-5 w-5 text-purple-500 pointer-events-none z-10" />
+                <Select
+                  placeholder="Seleziona una sede"
+                  className="h-12 pl-11 rounded-xl border-2 border-gray-300 focus:border-purple-400 text-base font-semibold appearance-none"
+                  disabled={isLoading}
+                  error={errors.id_sede?.message}
+                  options={[
+                    { value: '', label: 'Nessuna sede' },
+                    ...sedi.map(s => ({ value: s.id, label: s.nome }))
+                  ]}
+                  {...register('id_sede', {
+                    setValueAs: (v) => v === '' ? null : Number(v)
+                  })}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Opzionale: associa questo settore a una sede specifica
               </p>
             </div>
 

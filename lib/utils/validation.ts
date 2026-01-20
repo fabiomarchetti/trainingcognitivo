@@ -126,6 +126,7 @@ export const settoreSchema = z.object({
     .min(1, errorMessages.required)
     .max(100, errorMessages.maxLength(100)),
   descrizione: z.string().nullable().optional(),
+  id_sede: z.number().nullable().optional(),
 })
 
 export type SettoreFormData = z.infer<typeof settoreSchema>

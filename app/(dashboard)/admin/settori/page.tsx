@@ -17,16 +17,20 @@ type Classe = Database['public']['Tables']['classi']['Row']
 
 interface SettoreWithCount extends Settore {
   classi_count: number
+  sede_nome: string | null
 }
 
 interface ClasseWithSettore extends Classe {
   settore_nome: string
 }
 
+type Sede = Database['public']['Tables']['sedi']['Row']
+
 export default function SettoriPage() {
   const { session, isLoading: isAuthLoading } = useAuth()
   const [settori, setSettori] = useState<SettoreWithCount[]>([])
   const [classi, setClassi] = useState<ClasseWithSettore[]>([])
+  const [sedi, setSedi] = useState<Sede[]>([])
   const [isLoadingSettori, setIsLoadingSettori] = useState(true)
   const [isLoadingClassi, setIsLoadingClassi] = useState(true)
 
@@ -47,6 +51,27 @@ export default function SettoriPage() {
   const isLoadingClassiRef = useRef(false)
   const hasLoadedSettoriRef = useRef(false)
   const hasLoadedClassiRef = useRef(false)
+  const hasLoadedSediRef = useRef(false)
+
+  // Carica sedi
+  const loadSedi = async () => {
+    if (hasLoadedSediRef.current) return
+    if (!session) return
+
+    try {
+      const { data, error } = await supabase
+        .from('sedi')
+        .select('*')
+        .order('nome', { ascending: true })
+
+      if (error) throw error
+
+      setSedi(data || [])
+      hasLoadedSediRef.current = true
+    } catch (err) {
+      console.error('[SEDI] Errore caricamento sedi:', err)
+    }
+  }
 
   // Carica settori con conteggio classi
   const loadSettori = async () => {
@@ -65,10 +90,15 @@ export default function SettoriPage() {
 
     setIsLoadingSettori(true)
     try {
-      // Query 1: Ottieni tutti i settori
+      // Query 1: Ottieni tutti i settori con nome sede
       const { data: settoriData, error: settoriError } = await supabase
         .from('settori')
-        .select('*')
+        .select(`
+          *,
+          sedi:id_sede (
+            nome
+          )
+        `)
         .order('ordine', { ascending: true })
         .order('nome', { ascending: true })
 
@@ -93,9 +123,10 @@ export default function SettoriPage() {
         return acc
       }, {} as Record<number, number>) || {}
 
-      const settoriWithCount = (settoriData || []).map(s => ({
+      const settoriWithCount = (settoriData || []).map((s: any) => ({
         ...s,
         classi_count: classiCounts[s.id] || 0,
+        sede_nome: s.sedi?.nome || null,
       }))
 
       console.log('[SETTORI] Dati caricati:', settoriWithCount.length, 'settori')
@@ -196,6 +227,10 @@ export default function SettoriPage() {
     }
 
     // Carica solo se non abbiamo già caricato
+    if (!hasLoadedSediRef.current) {
+      loadSedi()
+    }
+
     if (!hasLoadedSettoriRef.current) {
       console.log('[SETTORI/CLASSI] Chiamata loadSettori')
       loadSettori()
@@ -321,6 +356,7 @@ export default function SettoriPage() {
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Settore</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Sede</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Utilizzi</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Azioni</th>
                 </tr>
@@ -329,6 +365,9 @@ export default function SettoriPage() {
                 {settori.map((settore) => (
                   <tr key={settore.id} className="hover:bg-gray-50">
                     <td className="px-6 py-3 text-sm text-gray-900">{settore.nome}</td>
+                    <td className="px-6 py-3 text-sm text-gray-600">
+                      {settore.sede_nome || <span className="text-gray-400 italic">Non assegnata</span>}
+                    </td>
                     <td className="px-6 py-3 text-sm">
                       <span className="inline-flex items-center justify-center min-w-7 h-7 px-2 bg-cyan-400 text-white rounded-full font-semibold text-xs">
                         {settore.classi_count}
@@ -448,6 +487,7 @@ export default function SettoriPage() {
           loadClassi()
         }}
         settore={selectedSettore}
+        sedi={sedi}
       />
 
       <ConfirmModal

@@ -6,7 +6,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { useAuth } from '@/components/auth'
 import { ConfirmModal } from '@/components/ui/modal'
 import { SettoreModal } from '@/components/admin/settore-modal'
 import { ClasseModal } from '@/components/admin/classe-modal'
@@ -27,7 +26,7 @@ interface ClasseWithSettore extends Classe {
 type Sede = Database['public']['Tables']['sedi']['Row']
 
 export default function SettoriPage() {
-  const { session, isLoading: isAuthLoading } = useAuth()
+  // NON usiamo più auth - RLS pubblica permette lettura
   const [settori, setSettori] = useState<SettoreWithCount[]>([])
   const [classi, setClassi] = useState<ClasseWithSettore[]>([])
   const [sedi, setSedi] = useState<Sede[]>([])
@@ -59,7 +58,7 @@ export default function SettoriPage() {
   // Carica sedi
   const loadSedi = async () => {
     if (hasLoadedSediRef.current) return
-    if (!session) return
+    // NON verificare session - RLS pubblica
 
     try {
       const { data, error } = await supabase
@@ -83,12 +82,8 @@ export default function SettoriPage() {
       return
     }
 
-    if (!session) {
-      console.log('[SETTORI] Nessuna sessione attiva, skip caricamento')
-      return
-    }
-
-    console.log('[SETTORI] Inizio caricamento')
+    // NON verificare session - RLS pubblica permette lettura
+    console.log('[SETTORI] Inizio caricamento (RLS pubblica)')
     isLoadingSettoriRef.current = true
 
     setIsLoadingSettori(true)
@@ -151,12 +146,8 @@ export default function SettoriPage() {
       return
     }
 
-    if (!session) {
-      console.log('[CLASSI] Nessuna sessione attiva, skip caricamento')
-      return
-    }
-
-    console.log('[CLASSI] Inizio caricamento')
+    // NON verificare session - RLS pubblica permette lettura
+    console.log('[CLASSI] Inizio caricamento (RLS pubblica)')
     isLoadingClassiRef.current = true
 
     setIsLoadingClassi(true)
@@ -219,28 +210,11 @@ export default function SettoriPage() {
   }, [settori, filtroSedeId])
 
   useEffect(() => {
-    console.log('[SETTORI/CLASSI] useEffect - Auth status:', {
-      isAuthLoading,
-      hasSession: !!session,
-      hasLoadedSettori: hasLoadedSettoriRef.current,
-      hasLoadedClassi: hasLoadedClassiRef.current
-    })
+    console.log('[SETTORI/CLASSI] useEffect - Mount/Update')
 
-    // Attendi che l'autenticazione sia completata
-    if (isAuthLoading) {
-      console.log('[SETTORI/CLASSI] Auth ancora in caricamento, attendo...')
-      return
-    }
+    // NON attendere auth - RLS pubblica permette lettura
+    // Carica immediatamente se non già caricato
 
-    // Verifica che ci sia una sessione
-    if (!session) {
-      console.error('[SETTORI/CLASSI] Nessuna sessione attiva!')
-      setIsLoadingSettori(false)
-      setIsLoadingClassi(false)
-      return
-    }
-
-    // Carica solo se non abbiamo già caricato
     if (!hasLoadedSediRef.current) {
       loadSedi()
     }
@@ -248,22 +222,18 @@ export default function SettoriPage() {
     if (!hasLoadedSettoriRef.current) {
       console.log('[SETTORI/CLASSI] Chiamata loadSettori')
       loadSettori()
-    } else {
-      console.log('[SETTORI/CLASSI] Settori già caricati, skip')
     }
 
     if (!hasLoadedClassiRef.current) {
       console.log('[SETTORI/CLASSI] Chiamata loadClassi')
       loadClassi()
-    } else {
-      console.log('[SETTORI/CLASSI] Classi già caricate, skip')
     }
 
     return () => {
       console.log('[SETTORI/CLASSI] useEffect cleanup')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthLoading, session])
+  }, [])
 
   // Settori handlers
   const handleNewSettore = () => {

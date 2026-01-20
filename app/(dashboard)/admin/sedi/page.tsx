@@ -6,7 +6,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Building2, Plus, Pencil, Trash2, RefreshCw } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { useAuth } from '@/components/auth'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/ui/badge'
 import { ConfirmModal } from '@/components/ui/modal'
@@ -18,7 +17,7 @@ type Sede = Database['public']['Tables']['sedi']['Row']
 export default function SediPage() {
   console.log('[SEDI PAGE] Render component')
 
-  const { session, isLoading: isAuthLoading } = useAuth()
+  // NON usiamo più auth - RLS pubblica permette lettura
   const [sedi, setSedi] = useState<Sede[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -38,16 +37,8 @@ export default function SediPage() {
       return
     }
 
-    if (!session) {
-      console.log('[SEDI] Nessuna sessione attiva, skip caricamento')
-      setError('Sessione non disponibile. Effettua il login.')
-      return
-    }
-
-    console.log('[SEDI] Inizio caricamento', {
-      hasSession: !!session,
-      userId: session?.user?.id
-    })
+    // NON verificare session - RLS pubblica permette lettura senza auth
+    console.log('[SEDI] Inizio caricamento (RLS pubblica)')
     isLoadingRef.current = true
 
     setIsLoading(true)
@@ -95,50 +86,31 @@ export default function SediPage() {
   }
 
   useEffect(() => {
-    console.log('[SEDI] useEffect - Auth status:', {
-      isAuthLoading,
-      hasSession: !!session,
-      hasLoaded: hasLoadedRef.current,
-      isCurrentlyLoading: isLoadingRef.current,
-      userId: session?.user?.id
-    })
+    console.log('[SEDI] useEffect - Mount/Update')
 
     // Se abbiamo già caricato i dati, non fare nulla
     if (hasLoadedRef.current) {
-      console.log('[SEDI] Dati già caricati, skip tutto')
+      console.log('[SEDI] Dati già caricati, skip')
       setIsLoading(false)
       return
     }
 
     // Se stiamo già caricando, non fare nulla
     if (isLoadingRef.current) {
-      console.log('[SEDI] Caricamento già in corso da precedente chiamata, skip')
+      console.log('[SEDI] Caricamento già in corso, skip')
       return
     }
 
-    // Attendi che l'autenticazione sia completata
-    if (isAuthLoading) {
-      console.log('[SEDI] Auth ancora in caricamento, attendo...')
-      return
-    }
-
-    // Se auth completata ma nessuna sessione, mostra errore
-    if (!session) {
-      console.error('[SEDI] Nessuna sessione attiva!')
-      setIsLoading(false)
-      setError('Sessione non trovata. Accedi nuovamente.')
-      return
-    }
-
-    // Carica solo se non abbiamo già caricato e non stiamo già caricando
-    console.log('[SEDI] Chiamata loadSedi')
+    // NON attendere l'auth - le sedi hanno RLS pubblica
+    // Carica immediatamente i dati
+    console.log('[SEDI] Caricamento immediato (RLS pubblica)')
     loadSedi()
 
     return () => {
       console.log('[SEDI] useEffect cleanup')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthLoading, session])
+  }, [])
 
   // Apri modal nuova sede
   const handleNewSede = () => {
@@ -244,9 +216,6 @@ export default function SediPage() {
           <div className="p-12 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-cyan-200 border-t-cyan-600 mx-auto mb-4" />
             <p className="text-gray-600 font-semibold">Caricamento sedi...</p>
-            <p className="text-gray-400 text-sm mt-2">
-              {isAuthLoading ? 'Verifica autenticazione...' : 'Caricamento dati...'}
-            </p>
           </div>
         ) : sedi.length === 0 ? (
           <div className="p-12 text-center">

@@ -149,18 +149,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!isMounted) return
       setIsLoading(true)
 
-      // Timeout di sicurezza: se dopo 10 secondi non abbiamo una risposta, forziamo l'uscita
+      // Timeout di sicurezza: se dopo 30 secondi non abbiamo una risposta, forziamo l'uscita
       const safetyTimeout = setTimeout(() => {
-        if (isMounted && isLoading) {
-          console.error('[AUTH PROVIDER] TIMEOUT: Autenticazione bloccata, forzo uscita da isLoading')
+        if (isMounted) {
+          console.error('[AUTH PROVIDER] TIMEOUT: Autenticazione bloccata dopo 30s, forzo uscita da isLoading')
           setIsLoading(false)
         }
-      }, 10000)
+      }, 30000)
 
       try {
         console.log('[AUTH PROVIDER] Getting session...')
-        // Ottieni sessione corrente
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession()
+
+        // Ottieni sessione corrente con race condition per timeout
+        const getSessionPromise = supabase.auth.getSession()
+        const timeoutPromise = new Promise<any>((resolve) =>
+          setTimeout(() => {
+            console.warn('[AUTH PROVIDER] getSession() timeout dopo 5s, continuo senza sessione')
+            resolve({ data: { session: null }, error: null })
+          }, 5000)
+        )
+
+        const { data: { session: currentSession }, error } = await Promise.race([
+          getSessionPromise,
+          timeoutPromise
+        ])
 
         if (!isMounted) {
           console.log('[AUTH PROVIDER] Component unmounted, skipping')

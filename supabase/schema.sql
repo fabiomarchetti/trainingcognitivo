@@ -382,8 +382,8 @@ ALTER TABLE categorie_esercizi ENABLE ROW LEVEL SECURITY;
 -- ============================================
 
 -- SEDI
-CREATE POLICY "Utenti autenticati vedono sedi" ON sedi
-  FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Sedi visibili a tutti" ON sedi
+  FOR SELECT USING (true);
 
 CREATE POLICY "Solo admin modificano sedi" ON sedi
   FOR INSERT WITH CHECK (

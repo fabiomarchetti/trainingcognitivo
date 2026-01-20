@@ -102,13 +102,29 @@ export default function SediPage() {
       userId: session?.user?.id
     })
 
-    // Attendi che l'autenticazione sia completata
-    if (isAuthLoading) {
-      console.log('[SEDI] Auth ancora in caricamento, attendo...')
+    // Se auth ancora in caricamento MA già abbiamo caricato i dati, non fare nulla
+    if (hasLoadedRef.current) {
+      console.log('[SEDI] Dati già caricati, skip tutto')
+      setIsLoading(false)
       return
     }
 
-    // Verifica che ci sia una sessione
+    // Attendi max 2 secondi per l'auth, poi procedi comunque
+    if (isAuthLoading) {
+      console.log('[SEDI] Auth ancora in caricamento, attendo con timeout...')
+      const authTimeout = setTimeout(() => {
+        console.warn('[SEDI] Timeout auth, provo a caricare comunque')
+        if (!hasLoadedRef.current) {
+          loadSedi()
+        }
+      }, 2000)
+
+      return () => {
+        clearTimeout(authTimeout)
+      }
+    }
+
+    // Se auth completata ma nessuna sessione, mostra errore
     if (!session) {
       console.error('[SEDI] Nessuna sessione attiva!')
       setIsLoading(false)
@@ -120,9 +136,6 @@ export default function SediPage() {
     if (!hasLoadedRef.current) {
       console.log('[SEDI] Chiamata loadSedi')
       loadSedi()
-    } else {
-      console.log('[SEDI] Dati già caricati, skip')
-      setIsLoading(false)
     }
 
     return () => {

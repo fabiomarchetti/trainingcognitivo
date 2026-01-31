@@ -31,29 +31,42 @@ INSERT INTO public.ruoli (codice, nome, descrizione, tipo_ruolo, livello_accesso
 ('visitatore', 'Visitatore', 'Accesso temporaneo limitato al sistema', 'gestore', 20),
 ('utente', 'Paziente', 'Utente finale con difficoltà cognitive', 'paziente', 10);
 
--- STEP 3: Aggiungi colonna id_ruolo temporanea a profiles
+-- STEP 3: Crea/Ricrea funzione update_user_jwt_claims (potrebbe non esistere)
+CREATE OR REPLACE FUNCTION public.update_user_jwt_claims(user_id UUID, new_role TEXT)
+RETURNS VOID AS $$
+BEGIN
+  -- Aggiorna raw_app_meta_data in auth.users
+  UPDATE auth.users
+  SET raw_app_meta_data =
+    COALESCE(raw_app_meta_data, '{}'::jsonb) ||
+    jsonb_build_object('user_role', new_role)
+  WHERE id = user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- STEP 4: Aggiungi colonna id_ruolo temporanea a profiles
 ALTER TABLE public.profiles ADD COLUMN id_ruolo INT REFERENCES public.ruoli(id);
 
--- STEP 4: Migra dati da enum a FK
+-- STEP 5: Migra dati da enum a FK
 UPDATE public.profiles p
 SET id_ruolo = r.id
 FROM public.ruoli r
 WHERE p.ruolo::TEXT = r.codice;
 
--- STEP 5: Rendi id_ruolo NOT NULL (tutti devono avere un ruolo)
+-- STEP 6: Rendi id_ruolo NOT NULL (tutti devono avere un ruolo)
 ALTER TABLE public.profiles ALTER COLUMN id_ruolo SET NOT NULL;
 
--- STEP 6: Drop colonna vecchia ruolo enum
+-- STEP 7: Drop colonna vecchia ruolo enum
 ALTER TABLE public.profiles DROP COLUMN ruolo;
 
--- STEP 7: Rinomina id_ruolo -> ruolo (per retrocompatibilità nomi)
+-- STEP 8: Rinomina id_ruolo -> ruolo (per retrocompatibilità nomi)
 -- Oppure lasciamo id_ruolo? Decido di lasciare id_ruolo per chiarezza
 -- ALTER TABLE public.profiles RENAME COLUMN id_ruolo TO ruolo;
 
--- STEP 8: Crea index per performance
+-- STEP 9: Crea index per performance
 CREATE INDEX idx_profiles_id_ruolo ON public.profiles(id_ruolo);
 
--- STEP 9: Aggiorna funzione user_role() per leggere da tabella ruoli
+-- STEP 10: Aggiorna funzione user_role() per leggere da tabella ruoli
 CREATE OR REPLACE FUNCTION public.user_role()
 RETURNS TEXT AS $$
 DECLARE
@@ -77,7 +90,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
--- STEP 10: Aggiorna trigger handle_new_user per usare FK ruoli
+-- STEP 11: Aggiorna trigger handle_new_user per usare FK ruoli
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -111,7 +124,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- STEP 11: Aggiorna trigger sync_role_to_jwt per sincronizzare codice ruolo
+-- STEP 12: Aggiorna trigger sync_role_to_jwt per sincronizzare codice ruolo
 CREATE OR REPLACE FUNCTION public.sync_role_to_jwt()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -134,7 +147,7 @@ CREATE TRIGGER sync_role_jwt
   WHEN (OLD.id_ruolo IS DISTINCT FROM NEW.id_ruolo)
   EXECUTE FUNCTION public.sync_role_to_jwt();
 
--- STEP 12: Aggiorna JWT di tutti gli utenti esistenti con codice ruolo
+-- STEP 13: Aggiorna JWT di tutti gli utenti esistenti con codice ruolo
 DO $$
 DECLARE
     r RECORD;
@@ -149,7 +162,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- STEP 13: RLS su tabella ruoli
+-- STEP 14: RLS su tabella ruoli
 ALTER TABLE public.ruoli ENABLE ROW LEVEL SECURITY;
 
 -- Tutti possono vedere i ruoli attivi
@@ -160,7 +173,7 @@ CREATE POLICY "Ruoli attivi visibili a tutti" ON ruoli
 CREATE POLICY "Solo sviluppatori modificano ruoli" ON ruoli
   FOR ALL USING (public.user_role() = 'sviluppatore');
 
--- STEP 14: Drop vecchio enum (dopo che tutti i dati sono migrati)
+-- STEP 15: Drop vecchio enum (dopo che tutti i dati sono migrati)
 -- ATTENZIONE: Questo potrebbe dare errore se ci sono ancora riferimenti
 -- Lo facciamo alla fine per sicurezza
 DROP TYPE IF EXISTS ruolo_utente CASCADE;

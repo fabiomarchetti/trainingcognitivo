@@ -4,7 +4,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -16,9 +16,8 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 
 export function LoginForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirect') || '/dashboard'
+  const redirectTo = searchParams.get('redirect') || '/admin'
 
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -87,19 +86,19 @@ export function LoginForm() {
             destination = '/admin'
             break
           case 'educatore':
+          case 'insegnante':
             destination = '/dashboard'
             break
           case 'utente':
-            destination = '/training'
-            break
           case 'visitatore':
-            destination = '/demo' // TODO: creare pagina demo
+            destination = '/training'
             break
         }
       }
 
-      router.push(destination)
-      router.refresh()
+      // Usa window.location per redirect affidabile dopo login
+      // (evita problemi con router.push e auth state)
+      window.location.href = destination
     } catch (err) {
       console.error('Login error:', err)
       setError('Si è verificato un errore. Riprova più tardi.')

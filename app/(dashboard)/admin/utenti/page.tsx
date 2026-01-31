@@ -67,7 +67,7 @@ export default function UtentiPage() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*, ruolo:ruoli(*)')
+        .select('*, ruoli!id_ruolo(*)')
         .order('cognome', { ascending: true })
 
       if (error) {
@@ -77,8 +77,13 @@ export default function UtentiPage() {
       }
 
       console.log('[UTENTI] Dati caricati:', data?.length || 0, 'utenti')
-      const utentiData = data || []
-      setUtenti(utentiData)
+      // Rinomina ruoli -> ruolo per compatibilità
+      const utentiData = (data || []).map(u => ({
+        ...u,
+        ruolo: (u as any).ruoli,
+        ruoli: undefined
+      }))
+      setUtenti(utentiData as any)
       dataCache.set(CACHE_KEY, utentiData)
       hasLoadedRef.current = true
     } catch (err: any) {

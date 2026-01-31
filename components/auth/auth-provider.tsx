@@ -39,15 +39,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadProfile = async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('*, ruolo:ruoli(*)')
+      .select('*, ruoli!id_ruolo(*)')
       .eq('id', userId)
       .single()
 
     if (data) {
-      setProfile(data as ProfileWithRelations)
+      // Rinomina ruoli -> ruolo per compatibilità con ProfileWithRelations
+      const profileData = { ...data, ruolo: (data as any).ruoli }
+      delete (profileData as any).ruoli
+      setProfile(profileData as ProfileWithRelations)
+      return profileData as ProfileWithRelations
     }
 
-    return data as ProfileWithRelations | null
+    return null
   }
 
   // Refresh profilo
@@ -170,7 +174,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               ...session.user,
               profile: profileData,
             })
-            console.log('[AUTH PROVIDER] Profilo caricato:', profileData?.ruolo)
+            console.log('[AUTH PROVIDER] Profilo caricato:', {
+              nome: profileData?.nome,
+              ruolo: profileData?.ruolo,
+              ruoloCodice: profileData?.ruolo?.codice
+            })
           }
         }
 

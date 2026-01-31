@@ -5,7 +5,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Shield, Plus, Pencil, Trash2, RefreshCw, AlertCircle, X, Mail, Lock, User, Save, Phone, Building2 } from 'lucide-react'
+import { Shield, Plus, Pencil, Trash2, RefreshCw, AlertCircle, X, Mail, Lock, User, Save, Phone, Building2, Users, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { dataCache } from '@/lib/cache/data-cache'
 import { useAuth } from '@/components/auth/auth-provider'
@@ -42,6 +42,10 @@ export default function StaffPage() {
     id_ruolo: 0,
     stato: 'attivo' as 'attivo' | 'sospeso' | 'inattivo'
   })
+
+  // Seed demo users state
+  const [isSeeding, setIsSeeding] = useState(false)
+  const [seedResult, setSeedResult] = useState<{ success: boolean; message: string } | null>(null)
 
   const supabase = createClient()
   const isLoadingRef = useRef(false)
@@ -341,6 +345,42 @@ export default function StaffPage() {
     }
   }
 
+  // Genera 40 utenti demo
+  const handleSeedDemo = async () => {
+    setIsSeeding(true)
+    setSeedResult(null)
+
+    try {
+      const response = await fetch('/api/seed/staff', { method: 'POST' })
+      const data = await response.json()
+
+      if (data.success) {
+        setSeedResult({
+          success: true,
+          message: `Creati ${data.created} utenti demo! Password: Demo1234!`
+        })
+        // Ricarica la lista staff
+        dataCache.invalidate(CACHE_KEY)
+        loadStaff(true)
+      } else {
+        setSeedResult({
+          success: false,
+          message: data.error || 'Errore durante la creazione'
+        })
+      }
+    } catch (err: any) {
+      console.error('Errore seed:', err)
+      setSeedResult({
+        success: false,
+        message: err?.message || 'Errore di connessione'
+      })
+    } finally {
+      setIsSeeding(false)
+      // Nascondi il messaggio dopo 5 secondi
+      setTimeout(() => setSeedResult(null), 5000)
+    }
+  }
+
   // Formatta data
   const formatDate = (date: string | null) => {
     if (!date) return '-'
@@ -373,6 +413,23 @@ export default function StaffPage() {
               Aggiorna
             </button>
             <button
+              onClick={handleSeedDemo}
+              disabled={isSeeding}
+              className="flex items-center gap-2 px-5 py-3 bg-green-500 hover:bg-green-600 text-white rounded-2xl font-bold transition-all shadow-lg hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+            >
+              {isSeeding ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Creazione...
+                </>
+              ) : (
+                <>
+                  <Users className="h-5 w-5" />
+                  Genera 40 Demo
+                </>
+              )}
+            </button>
+            <button
               onClick={handleOpenCreateModal}
               className="flex items-center gap-2 px-5 py-3 bg-white text-purple-600 rounded-2xl font-bold hover:scale-110 transition-all shadow-xl hover:shadow-2xl"
             >
@@ -382,6 +439,22 @@ export default function StaffPage() {
           </div>
         </div>
       </div>
+
+      {/* Messaggio risultato seed */}
+      {seedResult && (
+        <div className={`p-4 rounded-2xl border-2 flex items-center gap-3 ${
+          seedResult.success
+            ? 'bg-green-100 border-green-400 text-green-800'
+            : 'bg-red-100 border-red-400 text-red-800'
+        }`}>
+          {seedResult.success ? (
+            <Users className="h-6 w-6" />
+          ) : (
+            <AlertCircle className="h-6 w-6" />
+          )}
+          <span className="font-bold">{seedResult.message}</span>
+        </div>
+      )}
 
       {/* Tabella Staff */}
       <div className="bg-white rounded-3xl shadow-xl border-4 border-purple-200 overflow-hidden">

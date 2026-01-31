@@ -6,13 +6,26 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Edit2, Trash2, Shield, Users, Heart, AlertCircle } from 'lucide-react'
+import { Plus, Edit2, Trash2, Shield, Users, Heart, AlertCircle, X, Save } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/auth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import type { Ruolo } from '@/lib/supabase/types'
+import { Input } from '@/components/ui/input'
+import type { Ruolo, TipoRuolo } from '@/lib/supabase/types'
+
+// Helper per generare codice da nome
+function generateCodice(nome: string): string {
+  return nome
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
+}
 
 export default function RuoliPage() {
   const router = useRouter()
@@ -20,6 +33,21 @@ export default function RuoliPage() {
   const [ruoli, setRuoli] = useState<Ruolo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Modal state
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
+
+  // Form state
+  const [formData, setFormData] = useState({
+    nome: '',
+    codice: '',
+    descrizione: '',
+    tipo_ruolo: 'gestore' as TipoRuolo,
+    livello_accesso: 50,
+    is_attivo: true
+  })
 
   // Controllo accesso: solo sviluppatore
   useEffect(() => {
@@ -71,6 +99,88 @@ export default function RuoliPage() {
     }
   }
 
+  // Apri modal creazione
+  const handleOpenCreateModal = () => {
+    setFormData({
+      nome: '',
+      codice: '',
+      descrizione: '',
+      tipo_ruolo: 'gestore',
+      livello_accesso: 50,
+      is_attivo: true
+    })
+    setCreateError(null)
+    setCreateModalOpen(true)
+  }
+
+  // Aggiorna codice quando cambia il nome
+  const handleNomeChange = (nome: string) => {
+    setFormData(prev => ({
+      ...prev,
+      nome,
+      codice: generateCodice(nome)
+    }))
+  }
+
+  // Crea nuovo ruolo
+  const handleCreateRuolo = async () => {
+    setCreateError(null)
+
+    // Validazione
+    if (!formData.nome.trim()) {
+      setCreateError('Il nome è obbligatorio')
+      return
+    }
+    if (!formData.codice.trim()) {
+      setCreateError('Il codice è obbligatorio')
+      return
+    }
+    if (formData.livello_accesso < 0 || formData.livello_accesso > 100) {
+      setCreateError('Il livello accesso deve essere tra 0 e 100')
+      return
+    }
+
+    // Verifica codice unico
+    const codiceEsistente = ruoli.find(r => r.codice === formData.codice)
+    if (codiceEsistente) {
+      setCreateError('Esiste già un ruolo con questo codice')
+      return
+    }
+
+    setIsCreating(true)
+
+    try {
+      const supabase = createClient()
+
+      const { error: insertError } = await supabase
+        .from('ruoli')
+        .insert({
+          nome: formData.nome.trim(),
+          codice: formData.codice.trim(),
+          descrizione: formData.descrizione.trim() || null,
+          tipo_ruolo: formData.tipo_ruolo,
+          livello_accesso: formData.livello_accesso,
+          is_attivo: formData.is_attivo,
+          permessi: {}
+        })
+
+      if (insertError) {
+        console.error('Errore inserimento ruolo:', insertError)
+        setCreateError(`Errore: ${insertError.message}`)
+        return
+      }
+
+      // Chiudi modal e ricarica
+      setCreateModalOpen(false)
+      loadRuoli()
+    } catch (err: any) {
+      console.error('Errore creazione ruolo:', err)
+      setCreateError(`Errore: ${err.message || 'Errore sconosciuto'}`)
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   const getTipoRuoloIcon = (tipo: string) => {
     switch (tipo) {
       case 'gestore':
@@ -118,7 +228,7 @@ export default function RuoliPage() {
             Crea e gestisci i ruoli del sistema dinamicamente
           </p>
         </div>
-        <Button>
+        <Button onClick={handleOpenCreateModal}>
           <Plus className="h-4 w-4" />
           Nuovo Ruolo
         </Button>
@@ -201,6 +311,156 @@ export default function RuoliPage() {
             Nessun ruolo trovato
           </CardContent>
         </Card>
+      )}
+
+      {/* Modal Creazione Ruolo */}
+      {createModalOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-50"
+            onClick={() => setCreateModalOpen(false)}
+          />
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-lg border-4 border-teal-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-teal-500 to-green-500 rounded-t-2xl">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Shield className="h-6 w-6" />
+                  Nuovo Ruolo
+                </h2>
+                <button
+                  onClick={() => setCreateModalOpen(false)}
+                  className="p-2 hover:bg-white/20 rounded-full transition-colors text-white"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                {createError && (
+                  <div className="p-3 bg-red-100 border border-red-300 rounded-xl text-red-700 text-sm flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                    {createError}
+                  </div>
+                )}
+
+                {/* Nome */}
+                <Input
+                  label="Nome Ruolo *"
+                  value={formData.nome}
+                  onChange={(e) => handleNomeChange(e.target.value)}
+                  placeholder="es. Coordinatore"
+                />
+
+                {/* Codice */}
+                <Input
+                  label="Codice *"
+                  value={formData.codice}
+                  onChange={(e) => setFormData(prev => ({ ...prev, codice: e.target.value }))}
+                  placeholder="es. coordinatore"
+                  className="font-mono"
+                />
+                <p className="text-xs text-gray-500 -mt-2">
+                  Codice univoco per identificare il ruolo (generato automaticamente dal nome)
+                </p>
+
+                {/* Descrizione */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Descrizione
+                  </label>
+                  <textarea
+                    value={formData.descrizione}
+                    onChange={(e) => setFormData(prev => ({ ...prev, descrizione: e.target.value }))}
+                    placeholder="Descrizione opzionale del ruolo..."
+                    rows={3}
+                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+                  />
+                </div>
+
+                {/* Tipo Ruolo */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tipo Ruolo *
+                  </label>
+                  <select
+                    value={formData.tipo_ruolo}
+                    onChange={(e) => setFormData(prev => ({ ...prev, tipo_ruolo: e.target.value as TipoRuolo }))}
+                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  >
+                    <option value="gestore">Gestore (Staff del portale)</option>
+                    <option value="paziente">Paziente (Utente finale)</option>
+                    <option value="familiare">Familiare</option>
+                  </select>
+                </div>
+
+                {/* Livello Accesso */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Livello Accesso * (0-100)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={formData.livello_accesso}
+                    onChange={(e) => setFormData(prev => ({ ...prev, livello_accesso: parseInt(e.target.value) || 0 }))}
+                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Livello alto = più permessi (100 = sviluppatore, 80 = admin, 50 = educatore, 10 = utente)
+                  </p>
+                </div>
+
+                {/* Attivo */}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="is_attivo"
+                    checked={formData.is_attivo}
+                    onChange={(e) => setFormData(prev => ({ ...prev, is_attivo: e.target.checked }))}
+                    className="w-5 h-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                  />
+                  <label htmlFor="is_attivo" className="text-sm font-medium text-gray-700">
+                    Ruolo attivo
+                  </label>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+                <Button
+                  variant="outline"
+                  onClick={() => setCreateModalOpen(false)}
+                  disabled={isCreating}
+                >
+                  Annulla
+                </Button>
+                <Button
+                  onClick={handleCreateRuolo}
+                  disabled={isCreating}
+                  className="bg-teal-500 hover:bg-teal-600"
+                >
+                  {isCreating ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                      Creazione...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Crea Ruolo
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )

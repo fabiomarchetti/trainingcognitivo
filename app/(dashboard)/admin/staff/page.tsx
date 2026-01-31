@@ -5,7 +5,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Shield, Plus, Pencil, Trash2, RefreshCw, AlertCircle, X, Mail, Lock, User, Save, Phone, Building2, Users, Loader2 } from 'lucide-react'
+import { Shield, Plus, Pencil, Trash2, RefreshCw, AlertCircle, X, Mail, Lock, User, Save, Phone, Building2, Users, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { dataCache } from '@/lib/cache/data-cache'
 import { useAuth } from '@/components/auth/auth-provider'
@@ -46,6 +46,12 @@ export default function StaffPage() {
   // Seed demo users state
   const [isSeeding, setIsSeeding] = useState(false)
   const [seedResult, setSeedResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  // Sorting state
+  type SortColumn = 'nome' | 'cognome' | 'email_contatto' | 'ruolo' | 'stato' | 'ultimo_accesso'
+  type SortDirection = 'asc' | 'desc'
+  const [sortColumn, setSortColumn] = useState<SortColumn>('cognome')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
 
   const supabase = createClient()
   const isLoadingRef = useRef(false)
@@ -387,6 +393,68 @@ export default function StaffPage() {
     return new Date(date).toLocaleDateString('it-IT')
   }
 
+  // Gestione ordinamento
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      // Cambia direzione se stessa colonna
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      // Nuova colonna, inizia con asc
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
+  // Icona ordinamento
+  const SortIcon = ({ column }: { column: SortColumn }) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="h-4 w-4 opacity-50" />
+    }
+    return sortDirection === 'asc'
+      ? <ArrowUp className="h-4 w-4" />
+      : <ArrowDown className="h-4 w-4" />
+  }
+
+  // Staff ordinato
+  const sortedStaff = [...staff].sort((a, b) => {
+    let valueA: string | number | null = null
+    let valueB: string | number | null = null
+
+    switch (sortColumn) {
+      case 'nome':
+        valueA = a.nome?.toLowerCase() || ''
+        valueB = b.nome?.toLowerCase() || ''
+        break
+      case 'cognome':
+        valueA = a.cognome?.toLowerCase() || ''
+        valueB = b.cognome?.toLowerCase() || ''
+        break
+      case 'email_contatto':
+        valueA = a.email_contatto?.toLowerCase() || ''
+        valueB = b.email_contatto?.toLowerCase() || ''
+        break
+      case 'ruolo':
+        valueA = a.ruolo?.nome?.toLowerCase() || ''
+        valueB = b.ruolo?.nome?.toLowerCase() || ''
+        break
+      case 'stato':
+        valueA = a.stato || ''
+        valueB = b.stato || ''
+        break
+      case 'ultimo_accesso':
+        valueA = a.ultimo_accesso ? new Date(a.ultimo_accesso).getTime() : 0
+        valueB = b.ultimo_accesso ? new Date(b.ultimo_accesso).getTime() : 0
+        break
+    }
+
+    if (valueA === null || valueA === '') return 1
+    if (valueB === null || valueB === '') return -1
+
+    if (valueA < valueB) return sortDirection === 'asc' ? -1 : 1
+    if (valueA > valueB) return sortDirection === 'asc' ? 1 : -1
+    return 0
+  })
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -490,17 +558,65 @@ export default function StaffPage() {
             <table className="w-full">
               <thead>
                 <tr className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                  <th className="px-4 py-4 text-left text-sm font-black uppercase">Nome</th>
-                  <th className="px-4 py-4 text-left text-sm font-black uppercase">Cognome</th>
-                  <th className="px-4 py-4 text-left text-sm font-black uppercase">Email</th>
-                  <th className="px-4 py-4 text-left text-sm font-black uppercase">Ruolo</th>
-                  <th className="px-4 py-4 text-left text-sm font-black uppercase">Stato</th>
-                  <th className="px-4 py-4 text-left text-sm font-black uppercase">Ultimo Accesso</th>
+                  <th
+                    className="px-4 py-4 text-left text-sm font-black uppercase cursor-pointer hover:bg-white/10 transition-colors"
+                    onClick={() => handleSort('nome')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Nome
+                      <SortIcon column="nome" />
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-4 text-left text-sm font-black uppercase cursor-pointer hover:bg-white/10 transition-colors"
+                    onClick={() => handleSort('cognome')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Cognome
+                      <SortIcon column="cognome" />
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-4 text-left text-sm font-black uppercase cursor-pointer hover:bg-white/10 transition-colors"
+                    onClick={() => handleSort('email_contatto')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Email
+                      <SortIcon column="email_contatto" />
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-4 text-left text-sm font-black uppercase cursor-pointer hover:bg-white/10 transition-colors"
+                    onClick={() => handleSort('ruolo')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Ruolo
+                      <SortIcon column="ruolo" />
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-4 text-left text-sm font-black uppercase cursor-pointer hover:bg-white/10 transition-colors"
+                    onClick={() => handleSort('stato')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Stato
+                      <SortIcon column="stato" />
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-4 text-left text-sm font-black uppercase cursor-pointer hover:bg-white/10 transition-colors"
+                    onClick={() => handleSort('ultimo_accesso')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Ultimo Accesso
+                      <SortIcon column="ultimo_accesso" />
+                    </div>
+                  </th>
                   <th className="px-4 py-4 text-center text-sm font-black uppercase">Azioni</th>
                 </tr>
               </thead>
               <tbody>
-                {staff.map((member, index) => (
+                {sortedStaff.map((member, index) => (
                   <tr
                     key={member.id}
                     className={`border-b border-gray-200 hover:bg-purple-50 transition-colors ${

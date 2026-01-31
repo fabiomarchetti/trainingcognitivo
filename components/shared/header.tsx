@@ -46,7 +46,7 @@ export function Header({ showNav = true }: HeaderProps) {
     })
   }
 
-  if (profile?.ruolo && ['amministratore', 'direttore', 'casemanager', 'educatore'].includes(profile.ruolo)) {
+  if (profile?.ruolo && ['responsabile_centro', 'educatore'].includes(profile.ruolo)) {
     navLinks.push({
       href: '/dashboard',
       label: 'Dashboard',

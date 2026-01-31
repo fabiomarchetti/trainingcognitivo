@@ -82,9 +82,7 @@ export function LoginForm() {
       if (profile?.ruolo) {
         switch (profile.ruolo) {
           case 'sviluppatore':
-          case 'amministratore':
-          case 'direttore':
-          case 'casemanager':
+          case 'responsabile_centro':
             destination = '/admin'
             break
           case 'educatore':
@@ -92,6 +90,9 @@ export function LoginForm() {
             break
           case 'utente':
             destination = '/training'
+            break
+          case 'visitatore':
+            destination = '/demo' // TODO: creare pagina demo
             break
         }
       }

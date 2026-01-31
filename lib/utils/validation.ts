@@ -82,11 +82,11 @@ export const registerSchema = z.object({
     .string()
     .min(1, errorMessages.required),
   ruolo: z.enum([
-    'amministratore',
-    'direttore',
-    'casemanager',
+    'sviluppatore',
+    'responsabile_centro',
     'educatore',
-    'utente'
+    'utente',
+    'visitatore'
   ]),
   id_sede: z.number().nullable().optional(),
   id_settore: z.number().nullable().optional(),

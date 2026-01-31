@@ -273,10 +273,10 @@ export function useHasRole(roles: RuoloUtente | RuoloUtente[]) {
 }
 
 /**
- * Hook per verificare se l'utente è admin (sviluppatore, amministratore, direttore, casemanager)
+ * Hook per verificare se l'utente è admin (sviluppatore, responsabile_centro)
  */
 export function useIsAdmin() {
-  return useHasRole(['sviluppatore', 'amministratore', 'direttore', 'casemanager'])
+  return useHasRole(['sviluppatore', 'responsabile_centro'])
 }
 
 /**

@@ -6,11 +6,10 @@
 // Tipi ENUM
 export type RuoloUtente =
   | 'sviluppatore'
-  | 'amministratore'
-  | 'direttore'
-  | 'casemanager'
+  | 'responsabile_centro'
   | 'educatore'
   | 'utente'
+  | 'visitatore'
 
 export type StatoAccount = 'attivo' | 'sospeso' | 'eliminato'
 export type StatoSede = 'attiva' | 'sospesa' | 'chiusa'
@@ -71,6 +70,8 @@ export interface Profile {
   note: string | null
   stato: StatoAccount
   ultimo_accesso: string | null
+  scadenza_accesso: string | null // Per visitatori con accesso temporaneo
+  giorni_accesso_rimanenti: number | null // 1, 2 o 3 giorni
   created_at: string
   updated_at: string
 }

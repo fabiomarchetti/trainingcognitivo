@@ -85,20 +85,18 @@ interface RoleBadgeProps {
 export function RoleBadge({ role, className }: RoleBadgeProps) {
   const variants: Record<string, 'primary' | 'purple' | 'success' | 'info' | 'warning' | 'default'> = {
     sviluppatore: 'purple',
-    amministratore: 'danger' as 'primary',
-    direttore: 'primary',
-    casemanager: 'info',
+    responsabile_centro: 'primary',
     educatore: 'success',
     utente: 'default',
+    visitatore: 'warning',
   }
 
   const labels: Record<string, string> = {
     sviluppatore: 'Sviluppatore',
-    amministratore: 'Admin',
-    direttore: 'Direttore',
-    casemanager: 'Case Manager',
+    responsabile_centro: 'Responsabile Centro',
     educatore: 'Educatore',
     utente: 'Utente',
+    visitatore: 'Visitatore',
   }
 
   return (

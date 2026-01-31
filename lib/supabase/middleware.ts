@@ -55,19 +55,25 @@ export function hasRoleAccess(
   // Sviluppatore ha accesso a tutto
   if (ruolo === 'sviluppatore') return true
 
-  // Admin routes
+  // Admin routes - solo sviluppatore e responsabile_centro
   if (pathname.startsWith('/admin')) {
-    return ['amministratore', 'direttore', 'casemanager'].includes(ruolo)
+    return ['responsabile_centro'].includes(ruolo)
   }
 
-  // Dashboard routes
+  // Dashboard routes - responsabile_centro e educatore
   if (pathname.startsWith('/dashboard')) {
-    return ['amministratore', 'direttore', 'casemanager', 'educatore'].includes(ruolo)
+    return ['responsabile_centro', 'educatore'].includes(ruolo)
   }
 
-  // Training routes - accessibili a tutti gli utenti autenticati
+  // Training routes - accessibili a utenti autenticati (utente, educatore, responsabile_centro)
   if (pathname.startsWith('/training') || pathname.startsWith('/strumenti')) {
-    return true
+    return ['utente', 'educatore', 'responsabile_centro'].includes(ruolo)
+  }
+
+  // Visitatore - accesso limitato solo a route specifiche
+  if (ruolo === 'visitatore') {
+    // TODO: definire route specifiche per visitatori
+    return pathname.startsWith('/demo') || pathname.startsWith('/training')
   }
 
   return true
@@ -79,14 +85,14 @@ export function hasRoleAccess(
 export function getRedirectPathForRole(ruolo: string): string {
   switch (ruolo) {
     case 'sviluppatore':
-    case 'amministratore':
-    case 'direttore':
-    case 'casemanager':
+    case 'responsabile_centro':
       return '/admin'
     case 'educatore':
       return '/dashboard'
     case 'utente':
       return '/training'
+    case 'visitatore':
+      return '/demo' // TODO: creare pagina demo per visitatori
     default:
       return '/login'
   }

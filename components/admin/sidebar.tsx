@@ -36,6 +36,11 @@ const menuItems = [
     icon: BarChart3,
     exact: true,
   },
+  {
+    label: 'Gestione Utenti',
+    href: '/admin/utenti',
+    icon: Users,
+  },
   { type: 'divider' },
   {
     label: 'Gestione Sedi',
@@ -48,26 +53,6 @@ const menuItems = [
     icon: FolderTree,
   },
   { type: 'divider' },
-  {
-    label: 'Gestione Direttori',
-    href: '/admin/direttori',
-    icon: UserCog,
-  },
-  {
-    label: 'Gestione CaseManager',
-    href: '/admin/casemanager',
-    icon: Users,
-  },
-  {
-    label: 'Gestione Educatori',
-    href: '/admin/educatori',
-    icon: GraduationCap,
-  },
-  {
-    label: 'Gestione Utenti',
-    href: '/admin/utenti',
-    icon: Heart,
-  },
   {
     label: 'Assegna Esercizi',
     href: '/admin/assegna-esercizi',

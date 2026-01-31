@@ -8,6 +8,7 @@ export type RuoloUtente =
   | 'sviluppatore'
   | 'responsabile_centro'
   | 'educatore'
+  | 'insegnante'
   | 'utente'
   | 'visitatore'
 
@@ -98,6 +99,18 @@ export interface EducatoreUtente {
   is_attiva: boolean
   note: string | null
   created_at: string
+}
+
+export interface InsegnanteUtente {
+  id: number
+  id_insegnante: string // UUID
+  id_utente: string // UUID
+  id_sede: number | null
+  id_classe: number | null
+  is_attiva: boolean
+  note: string | null
+  created_at: string
+  updated_at: string
 }
 
 export interface CategoriaEsercizi {
@@ -239,6 +252,15 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Omit<EducatoreUtente, 'id'>>
+      }
+      insegnanti_utenti: {
+        Row: InsegnanteUtente
+        Insert: Omit<InsegnanteUtente, 'id' | 'created_at' | 'updated_at'> & {
+          id?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Omit<InsegnanteUtente, 'id'>>
       }
       categorie_esercizi: {
         Row: CategoriaEsercizi

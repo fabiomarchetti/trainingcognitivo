@@ -128,6 +128,28 @@ COMMENT ON TABLE educatori_utenti IS 'Associazioni tra educatori e utenti assegn
 
 
 -- ============================================
+-- 5b. INSEGNANTI_UTENTI (Associazioni insegnante-alunno)
+-- ============================================
+CREATE TABLE insegnanti_utenti (
+  id BIGSERIAL PRIMARY KEY,
+  id_insegnante UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  id_utente UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  id_sede INT REFERENCES sedi(id) ON DELETE SET NULL,
+  id_classe INT REFERENCES classi(id) ON DELETE SET NULL,
+  is_attiva BOOLEAN DEFAULT TRUE,
+  note TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(id_insegnante, id_utente)
+);
+
+CREATE INDEX idx_insegnanti_utenti_insegnante ON insegnanti_utenti(id_insegnante);
+CREATE INDEX idx_insegnanti_utenti_utente ON insegnanti_utenti(id_utente);
+
+COMMENT ON TABLE insegnanti_utenti IS 'Associazioni tra insegnanti e alunni/utenti assegnati';
+
+
+-- ============================================
 -- 6. CATEGORIE_ESERCIZI
 -- ============================================
 CREATE TABLE categorie_esercizi (

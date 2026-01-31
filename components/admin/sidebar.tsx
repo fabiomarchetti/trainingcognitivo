@@ -11,6 +11,7 @@ import {
   FolderTree,
   UserCog,
   Users,
+  Shield,
   GraduationCap,
   Heart,
   ClipboardList,
@@ -20,6 +21,7 @@ import {
   Settings,
   FileText,
   SlidersHorizontal,
+  KeyRound,
   X
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -36,10 +38,21 @@ const menuItems = [
     icon: BarChart3,
     exact: true,
   },
+  { type: 'divider' },
+  {
+    label: 'Gestione Staff',
+    href: '/admin/staff',
+    icon: Shield,
+  },
   {
     label: 'Gestione Utenti',
     href: '/admin/utenti',
     icon: Users,
+  },
+  {
+    label: 'Ruoli',
+    href: '/admin/ruoli',
+    icon: KeyRound,
   },
   { type: 'divider' },
   {

@@ -30,6 +30,14 @@ interface ClasseWithSettore extends Classe {
 
 type Sede = Database['public']['Tables']['sedi']['Row']
 
+// Helper per verificare se un errore è AbortError
+function isAbortError(err: any): boolean {
+  return err?.message?.includes('AbortError') ||
+         err?.name === 'AbortError' ||
+         err?.details?.includes('AbortError') ||
+         err?.message?.includes('signal is aborted')
+}
+
 export default function SettoriPage() {
   // NON usiamo più auth - RLS pubblica permette lettura
   const [settori, setSettori] = useState<SettoreWithCount[]>([])
@@ -85,7 +93,16 @@ export default function SettoriPage() {
       setSedi(sedeData)
       dataCache.set(CACHE_KEY_SEDI, sedeData)
       hasLoadedSediRef.current = true
-    } catch (err) {
+    } catch (err: any) {
+      // Ignora AbortError - è normale durante navigazione/unmount
+      const isAbortError = err?.message?.includes('AbortError') ||
+                          err?.name === 'AbortError' ||
+                          err?.details?.includes('AbortError')
+
+      if (isAbortError) {
+        console.log('[SETTORI/SEDI] AbortError ignorato (normale durante navigazione)')
+        return
+      }
       console.error('[SEDI] Errore caricamento sedi:', err)
     }
   }
@@ -128,6 +145,10 @@ export default function SettoriPage() {
         .order('nome', { ascending: true })
 
       if (settoriError) {
+        if (isAbortError(settoriError)) {
+          console.log('[SETTORI] AbortError query ignorato')
+          return
+        }
         console.error('[SETTORI] Errore query settori:', settoriError)
         throw settoriError
       }
@@ -138,6 +159,10 @@ export default function SettoriPage() {
         .select('id_settore')
 
       if (classiError) {
+        if (isAbortError(classiError)) {
+          console.log('[SETTORI] AbortError query classi count ignorato')
+          return
+        }
         console.error('[SETTORI] Errore query classi count:', classiError)
         throw classiError
       }
@@ -160,7 +185,16 @@ export default function SettoriPage() {
       setSettori(settoriWithCount)
       dataCache.set(CACHE_KEY_SETTORI, settoriWithCount)
       hasLoadedSettoriRef.current = true
-    } catch (err) {
+    } catch (err: any) {
+      // Ignora AbortError - è normale durante navigazione/unmount
+      const isAbortError = err?.message?.includes('AbortError') ||
+                          err?.name === 'AbortError' ||
+                          err?.details?.includes('AbortError')
+
+      if (isAbortError) {
+        console.log('[SETTORI] AbortError ignorato (normale durante navigazione)')
+        return
+      }
       console.error('[SETTORI] Errore caricamento settori:', err)
     } finally {
       setIsLoadingSettori(false)
@@ -202,6 +236,10 @@ export default function SettoriPage() {
         .order('nome', { ascending: true })
 
       if (classiError) {
+        if (isAbortError(classiError)) {
+          console.log('[CLASSI] AbortError query ignorato')
+          return
+        }
         console.error('[CLASSI] Errore query classi:', classiError)
         throw classiError
       }
@@ -212,6 +250,10 @@ export default function SettoriPage() {
         .select('id, nome')
 
       if (settoriError) {
+        if (isAbortError(settoriError)) {
+          console.log('[CLASSI] AbortError query settori ignorato')
+          return
+        }
         console.error('[CLASSI] Errore query settori:', settoriError)
         throw settoriError
       }
@@ -232,7 +274,16 @@ export default function SettoriPage() {
       setClassi(classiWithSettore)
       dataCache.set(CACHE_KEY_CLASSI, classiWithSettore)
       hasLoadedClassiRef.current = true
-    } catch (err) {
+    } catch (err: any) {
+      // Ignora AbortError - è normale durante navigazione/unmount
+      const isAbortError = err?.message?.includes('AbortError') ||
+                          err?.name === 'AbortError' ||
+                          err?.details?.includes('AbortError')
+
+      if (isAbortError) {
+        console.log('[CLASSI] AbortError ignorato (normale durante navigazione)')
+        return
+      }
       console.error('[CLASSI] Errore caricamento classi:', err)
     } finally {
       setIsLoadingClassi(false)

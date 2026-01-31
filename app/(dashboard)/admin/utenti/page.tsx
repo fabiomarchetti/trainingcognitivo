@@ -114,6 +114,15 @@ export default function UtentiPage() {
       dataCache.set(CACHE_KEY, utentiData)
       hasLoadedRef.current = true
     } catch (err: any) {
+      // Ignora AbortError - è normale durante navigazione/unmount
+      const isAbortError = err?.message?.includes('AbortError') ||
+                          err?.name === 'AbortError' ||
+                          err?.details?.includes('AbortError')
+
+      if (isAbortError) {
+        console.log('[UTENTI] AbortError ignorato (normale durante navigazione)')
+        return
+      }
       console.error('[UTENTI] Errore caricamento utenti:', err)
       if (!error) {
         setError(`Errore: ${err?.message || 'Errore sconosciuto'}`)

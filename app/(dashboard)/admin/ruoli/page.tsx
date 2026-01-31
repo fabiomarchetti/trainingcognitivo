@@ -91,7 +91,16 @@ export default function RuoliPage() {
       if (fetchError) throw fetchError
 
       setRuoli(data || [])
-    } catch (err) {
+    } catch (err: any) {
+      // Ignora AbortError - è normale durante navigazione/unmount
+      const isAbortError = err?.message?.includes('AbortError') ||
+                          err?.name === 'AbortError' ||
+                          err?.details?.includes('AbortError')
+
+      if (isAbortError) {
+        console.log('[RUOLI] AbortError ignorato (normale durante navigazione)')
+        return
+      }
       console.error('Errore caricamento ruoli:', err)
       setError('Impossibile caricare i ruoli')
     } finally {

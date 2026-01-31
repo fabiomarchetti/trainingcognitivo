@@ -122,6 +122,15 @@ export default function StaffPage() {
       dataCache.set(CACHE_KEY, staffData)
       hasLoadedRef.current = true
     } catch (err: any) {
+      // Ignora AbortError - è normale durante navigazione/unmount
+      const isAbortError = err?.message?.includes('AbortError') ||
+                          err?.name === 'AbortError' ||
+                          err?.details?.includes('AbortError')
+
+      if (isAbortError) {
+        console.log('[STAFF] AbortError ignorato (normale durante navigazione)')
+        return
+      }
       console.error('[STAFF] Errore caricamento staff:', err)
       if (!error) {
         setError(`Errore: ${err?.message || 'Errore sconosciuto'}`)

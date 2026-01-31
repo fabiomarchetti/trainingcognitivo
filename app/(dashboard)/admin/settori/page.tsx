@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { dataCache } from '@/lib/cache/data-cache'
 import { ConfirmModal } from '@/components/ui/modal'
 import { SettoreModal } from '@/components/admin/settore-modal'
 import { ClasseModal } from '@/components/admin/classe-modal'
@@ -13,6 +14,10 @@ import type { Database } from '@/lib/supabase/types'
 
 type Settore = Database['public']['Tables']['settori']['Row']
 type Classe = Database['public']['Tables']['classi']['Row']
+
+const CACHE_KEY_SEDI = 'admin:sedi'
+const CACHE_KEY_SETTORI = 'admin:settori'
+const CACHE_KEY_CLASSI = 'admin:classi'
 
 interface SettoreWithCount extends Settore {
   classi_count: number
@@ -47,8 +52,8 @@ export default function SettoriPage() {
   const [selectedClasse, setSelectedClasse] = useState<Classe | null>(null)
   const [deleteClasseModalOpen, setDeleteClasseModalOpen] = useState(false)
   const [classeToDelete, setClasseToDelete] = useState<Classe | null>(null)
-  const supabaseRef = useRef(createClient())
-  const supabase = supabaseRef.current
+  // Usa direttamente createClient() - è un singleton, non serve useRef
+  const supabase = createClient()
   const isLoadingSettoriRef = useRef(false)
   const isLoadingClassiRef = useRef(false)
   const hasLoadedSettoriRef = useRef(false)
@@ -58,7 +63,15 @@ export default function SettoriPage() {
   // Carica sedi
   const loadSedi = async () => {
     if (hasLoadedSediRef.current) return
-    // NON verificare session - RLS pubblica
+
+    // Controlla cache
+    const cached = dataCache.get<Sede[]>(CACHE_KEY_SEDI)
+    if (cached) {
+      console.log('[SETTORI/SEDI] Dati trovati in cache')
+      setSedi(cached)
+      hasLoadedSediRef.current = true
+      return
+    }
 
     try {
       const { data, error } = await supabase
@@ -68,7 +81,9 @@ export default function SettoriPage() {
 
       if (error) throw error
 
-      setSedi(data || [])
+      const sedeData = data || []
+      setSedi(sedeData)
+      dataCache.set(CACHE_KEY_SEDI, sedeData)
       hasLoadedSediRef.current = true
     } catch (err) {
       console.error('[SEDI] Errore caricamento sedi:', err)
@@ -76,14 +91,26 @@ export default function SettoriPage() {
   }
 
   // Carica settori con conteggio classi
-  const loadSettori = async () => {
+  const loadSettori = async (forceReload = false) => {
     if (isLoadingSettoriRef.current) {
       console.log('[SETTORI] Caricamento già in corso, skip')
       return
     }
 
+    // Controlla cache
+    if (!forceReload) {
+      const cached = dataCache.get<SettoreWithCount[]>(CACHE_KEY_SETTORI)
+      if (cached) {
+        console.log('[SETTORI] Dati trovati in cache:', cached.length, 'settori')
+        setSettori(cached)
+        setIsLoadingSettori(false)
+        hasLoadedSettoriRef.current = true
+        return
+      }
+    }
+
     // NON verificare session - RLS pubblica permette lettura
-    console.log('[SETTORI] Inizio caricamento (RLS pubblica)')
+    console.log('[SETTORI] Inizio caricamento da database (RLS pubblica)')
     isLoadingSettoriRef.current = true
 
     setIsLoadingSettori(true)
@@ -129,6 +156,7 @@ export default function SettoriPage() {
 
       console.log('[SETTORI] Dati caricati:', settoriWithCount.length, 'settori')
       setSettori(settoriWithCount)
+      dataCache.set(CACHE_KEY_SETTORI, settoriWithCount)
       hasLoadedSettoriRef.current = true
     } catch (err) {
       console.error('[SETTORI] Errore caricamento settori:', err)
@@ -140,14 +168,26 @@ export default function SettoriPage() {
   }
 
   // Carica classi con nome settore
-  const loadClassi = async () => {
+  const loadClassi = async (forceReload = false) => {
     if (isLoadingClassiRef.current) {
       console.log('[CLASSI] Caricamento già in corso, skip')
       return
     }
 
+    // Controlla cache
+    if (!forceReload) {
+      const cached = dataCache.get<ClasseWithSettore[]>(CACHE_KEY_CLASSI)
+      if (cached) {
+        console.log('[CLASSI] Dati trovati in cache:', cached.length, 'classi')
+        setClassi(cached)
+        setIsLoadingClassi(false)
+        hasLoadedClassiRef.current = true
+        return
+      }
+    }
+
     // NON verificare session - RLS pubblica permette lettura
-    console.log('[CLASSI] Inizio caricamento (RLS pubblica)')
+    console.log('[CLASSI] Inizio caricamento da database (RLS pubblica)')
     isLoadingClassiRef.current = true
 
     setIsLoadingClassi(true)
@@ -188,6 +228,7 @@ export default function SettoriPage() {
 
       console.log('[CLASSI] Dati caricati:', classiWithSettore.length, 'classi')
       setClassi(classiWithSettore)
+      dataCache.set(CACHE_KEY_CLASSI, classiWithSettore)
       hasLoadedClassiRef.current = true
     } catch (err) {
       console.error('[CLASSI] Errore caricamento classi:', err)
@@ -264,8 +305,11 @@ export default function SettoriPage() {
 
       setDeleteSettoreModalOpen(false)
       setSettoreToDelete(null)
-      loadSettori()
-      loadClassi() // Ricarica anche le classi
+      // Invalida cache e ricarica
+      dataCache.invalidate(CACHE_KEY_SETTORI)
+      dataCache.invalidate(CACHE_KEY_CLASSI)
+      loadSettori(true)
+      loadClassi(true)
     } catch (err) {
       console.error('Errore eliminazione settore:', err)
       alert('Errore durante l\'eliminazione del settore')
@@ -301,8 +345,11 @@ export default function SettoriPage() {
 
       setDeleteClasseModalOpen(false)
       setClasseToDelete(null)
-      loadClassi()
-      loadSettori() // Ricarica anche i settori per aggiornare il conteggio
+      // Invalida cache e ricarica
+      dataCache.invalidate(CACHE_KEY_CLASSI)
+      dataCache.invalidate(CACHE_KEY_SETTORI)
+      loadClassi(true)
+      loadSettori(true)
     } catch (err) {
       console.error('Errore eliminazione classe:', err)
       alert('Errore durante l\'eliminazione della classe')
@@ -494,8 +541,10 @@ export default function SettoriPage() {
           setSelectedSettore(null)
         }}
         onSuccess={() => {
-          loadSettori()
-          loadClassi()
+          dataCache.invalidate(CACHE_KEY_SETTORI)
+          dataCache.invalidate(CACHE_KEY_CLASSI)
+          loadSettori(true)
+          loadClassi(true)
         }}
         settore={selectedSettore}
         sedi={sedi}
@@ -522,8 +571,10 @@ export default function SettoriPage() {
           setSelectedClasse(null)
         }}
         onSuccess={() => {
-          loadClassi()
-          loadSettori()
+          dataCache.invalidate(CACHE_KEY_CLASSI)
+          dataCache.invalidate(CACHE_KEY_SETTORI)
+          loadClassi(true)
+          loadSettori(true)
         }}
         classe={selectedClasse}
         settori={settori}

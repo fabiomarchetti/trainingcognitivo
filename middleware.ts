@@ -31,15 +31,33 @@ export async function middleware(request: NextRequest) {
   // Aggiorna sessione Supabase
   const { user, supabaseResponse, supabase } = await updateSession(request)
 
+  // Cache del profilo utente per evitare query duplicate
+  let cachedProfile: { ruolo: string } | null = null
+
+  // Funzione helper per ottenere il profilo (con cache)
+  const getProfile = async () => {
+    if (cachedProfile) return cachedProfile
+
+    if (!user) return null
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('ruolo')
+      .eq('id', user.id)
+      .single()
+
+    if (profile) {
+      cachedProfile = profile
+    }
+
+    return profile
+  }
+
   // Route pubbliche - consenti accesso
   if (publicRoutes.includes(pathname)) {
     // Se utente autenticato accede a login, redirect a dashboard appropriata
     if (user && (pathname === '/login' || pathname === '/register')) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('ruolo')
-        .eq('id', user.id)
-        .single()
+      const profile = await getProfile()
 
       if (profile?.ruolo) {
         const redirectPath = getRedirectPathForRole(profile.ruolo)
@@ -60,12 +78,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(redirectUrl)
     }
 
-    // Verifica ruolo per accesso alla route
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('ruolo')
-      .eq('id', user.id)
-      .single()
+    // Verifica ruolo per accesso alla route (usa cache)
+    const profile = await getProfile()
 
     if (!profile) {
       // Profilo non trovato - logout e redirect

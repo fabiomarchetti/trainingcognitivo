@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Building2, Plus, Pencil, Trash2, RefreshCw } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { dataCache } from '@/lib/cache/data-cache'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/ui/badge'
 import { ConfirmModal } from '@/components/ui/modal'
@@ -13,6 +14,8 @@ import { SedeModal } from '@/components/admin/sede-modal'
 import type { Database } from '@/lib/supabase/types'
 
 type Sede = Database['public']['Tables']['sedi']['Row']
+
+const CACHE_KEY = 'admin:sedi'
 
 export default function SediPage() {
   console.log('[SEDI PAGE] Render component')
@@ -25,29 +28,38 @@ export default function SediPage() {
   const [selectedSede, setSelectedSede] = useState<Sede | null>(null)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [sedeToDelete, setSedeToDelete] = useState<Sede | null>(null)
-  const supabaseRef = useRef(createClient())
-  const supabase = supabaseRef.current
+  // Usa direttamente createClient() - è un singleton, non serve useRef
+  const supabase = createClient()
   const isLoadingRef = useRef(false)
   const hasLoadedRef = useRef(false)
 
   // Carica sedi
-  const loadSedi = async () => {
+  const loadSedi = async (forceReload = false) => {
     if (isLoadingRef.current) {
       console.log('[SEDI] Caricamento già in corso, skip')
       return
     }
 
+    // Controlla cache prima di caricare
+    if (!forceReload) {
+      const cached = dataCache.get<Sede[]>(CACHE_KEY)
+      if (cached) {
+        console.log('[SEDI] Dati trovati in cache:', cached.length, 'sedi')
+        setSedi(cached)
+        setIsLoading(false)
+        hasLoadedRef.current = true
+        return
+      }
+    }
+
     // NON verificare session - RLS pubblica permette lettura senza auth
-    console.log('[SEDI] Inizio caricamento (RLS pubblica)')
+    console.log('[SEDI] Inizio caricamento da database (RLS pubblica)')
     isLoadingRef.current = true
 
     setIsLoading(true)
     setError(null)
     try {
       console.log('[SEDI] Avvio query Supabase...')
-      console.log('[SEDI] Supabase client config:', {
-        hasClient: !!supabase
-      })
 
       const { data, error } = await supabase
         .from('sedi')
@@ -63,7 +75,10 @@ export default function SediPage() {
       }
 
       console.log('[SEDI] Dati caricati:', data?.length || 0, 'sedi')
-      setSedi(data || [])
+      const sedeData = data || []
+      setSedi(sedeData)
+      // Salva in cache
+      dataCache.set(CACHE_KEY, sedeData)
       hasLoadedRef.current = true
     } catch (err: any) {
       console.error('[SEDI] Errore caricamento sedi:', err)
@@ -91,7 +106,6 @@ export default function SediPage() {
     // Se abbiamo già caricato i dati, non fare nulla
     if (hasLoadedRef.current) {
       console.log('[SEDI] Dati già caricati, skip')
-      setIsLoading(false)
       return
     }
 
@@ -144,7 +158,9 @@ export default function SediPage() {
 
       setDeleteModalOpen(false)
       setSedeToDelete(null)
-      loadSedi()
+      // Invalida cache e ricarica
+      dataCache.invalidate(CACHE_KEY)
+      loadSedi(true)
     } catch (err) {
       console.error('Errore eliminazione sede:', err)
       alert('Errore durante l\'eliminazione della sede')
@@ -173,7 +189,10 @@ export default function SediPage() {
           </div>
           <div className="flex gap-3">
             <button
-              onClick={loadSedi}
+              onClick={() => {
+                dataCache.invalidate(CACHE_KEY)
+                loadSedi(true)
+              }}
               className="flex items-center gap-2 px-5 py-3 bg-white/20 hover:bg-white/30 text-white rounded-2xl font-bold transition-all shadow-lg hover:scale-105"
             >
               <RefreshCw className="h-5 w-5" />
@@ -312,7 +331,10 @@ export default function SediPage() {
           setIsModalOpen(false)
           setSelectedSede(null)
         }}
-        onSuccess={loadSedi}
+        onSuccess={() => {
+          dataCache.invalidate(CACHE_KEY)
+          loadSedi(true)
+        }}
         sede={selectedSede}
       />
 

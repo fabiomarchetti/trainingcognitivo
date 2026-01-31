@@ -27,8 +27,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const supabaseRef = useRef(createClient())
-  const supabase = supabaseRef.current
+  // Usa direttamente createClient() - è un singleton, restituisce sempre la stessa istanza
+  const supabase = createClient()
 
   const [user, setUser] = useState<AuthUser | null>(null)
   const [session, setSession] = useState<Session | null>(null)
@@ -127,12 +127,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('[AUTH PROVIDER] Errore pulizia cookies:', error)
     }
 
-    // Redirect FORZATO al login
-    console.log('[AUTH PROVIDER] Redirect al login in 200ms...')
-    setTimeout(() => {
-      console.log('[AUTH PROVIDER] Eseguo redirect a /login')
-      window.location.href = '/login'
-    }, 200)
+    // Redirect IMMEDIATO al login (senza setTimeout per evitare race conditions)
+    console.log('[AUTH PROVIDER] Eseguo redirect a /login')
+    window.location.href = '/login'
   }
 
   // Init e listener auth state
@@ -144,38 +141,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
     let isMounted = true
     let subscription: any = null
+    let safetyTimeoutId: NodeJS.Timeout | null = null
+    let sessionReceived = false
 
     const initAuth = async () => {
       if (!isMounted) return
 
-      // Non usiamo più getSession() perché in produzione è troppo lento
-      // Ci affidiamo completamente al listener onAuthStateChange
-      console.log('[AUTH PROVIDER] Init - Attendo listener per sessione...')
+      console.log('[AUTH PROVIDER] Init - Inizio setup...')
 
-      // Safety timeout: se dopo 10 secondi non abbiamo sessione, usciamo da loading
-      const safetyTimeout = setTimeout(() => {
-        if (isMounted) {
-          console.warn('[AUTH PROVIDER] Nessuna sessione dopo 10s, esco da loading')
-          setIsLoading(false)
-        }
-      }, 10000)
-
-      // Cleanup del timeout quando la sessione arriva dal listener
-      return () => clearTimeout(safetyTimeout)
-    }
-
-    // Setup auth state listener
-    const setupListener = () => {
+      // Setup listener PRIMA di tutto
       const { data } = supabase.auth.onAuthStateChange(
         async (event, newSession) => {
           if (!isMounted) return
-          console.log('[AUTH PROVIDER] Auth state changed:', event, 'hasSession:', !!newSession)
+          console.log('[AUTH PROVIDER] Auth event:', event, 'hasSession:', !!newSession)
+
+          // Marca che abbiamo ricevuto un evento
+          sessionReceived = true
+
+          // Clear safety timeout appena riceviamo qualsiasi evento
+          if (safetyTimeoutId) {
+            clearTimeout(safetyTimeoutId)
+            safetyTimeoutId = null
+          }
 
           setSession(newSession)
 
           if (event === 'INITIAL_SESSION') {
-            // Prima sessione caricata - esci da loading
-            console.log('[AUTH PROVIDER] Sessione iniziale caricata')
+            console.log('[AUTH PROVIDER] INITIAL_SESSION ricevuta')
             if (newSession?.user && isMounted) {
               const profileData = await loadProfile(newSession.user.id)
               console.log('[AUTH PROVIDER] Profile caricato:', !!profileData, profileData?.ruolo)
@@ -187,7 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
             }
             if (isMounted) {
-              console.log('[AUTH PROVIDER] Fine init da listener, isLoading -> false')
+              console.log('[AUTH PROVIDER] Fine init, isLoading -> false')
               setIsLoading(false)
             }
           } else if (event === 'SIGNED_IN' && newSession?.user && isMounted) {
@@ -209,14 +201,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       )
       subscription = data.subscription
+
+      // Safety timeout RIDOTTO: se dopo 3 secondi non abbiamo eventi, usciamo da loading
+      safetyTimeoutId = setTimeout(() => {
+        if (isMounted && !sessionReceived) {
+          console.warn('[AUTH PROVIDER] Nessun evento auth dopo 3s, forzo getSession()')
+          // Prova getSession() come fallback
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            if (isMounted) {
+              console.log('[AUTH PROVIDER] getSession() fallback:', !!session)
+              setSession(session)
+              if (session?.user) {
+                loadProfile(session.user.id).then(profileData => {
+                  if (isMounted) {
+                    setUser({
+                      ...session.user,
+                      profile: profileData,
+                    })
+                    setIsLoading(false)
+                  }
+                })
+              } else {
+                setIsLoading(false)
+              }
+            }
+          }).catch(err => {
+            console.error('[AUTH PROVIDER] getSession() fallback error:', err)
+            if (isMounted) {
+              setIsLoading(false)
+            }
+          })
+        }
+      }, 3000) // Ridotto da 10s a 3s
     }
 
     initAuth()
-    setupListener()
 
     return () => {
       console.log('[AUTH PROVIDER] Cleanup')
       isMounted = false
+      // Clear safety timeout nel cleanup
+      if (safetyTimeoutId) {
+        clearTimeout(safetyTimeoutId)
+      }
       if (subscription) {
         subscription.unsubscribe()
       }

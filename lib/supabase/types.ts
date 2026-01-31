@@ -11,6 +11,8 @@ export type RuoloUtente =
   | 'utente'
   | 'visitatore'
 
+export type TipoRuolo = 'gestore' | 'paziente' | 'familiare'
+
 export type StatoAccount = 'attivo' | 'sospeso' | 'eliminato'
 export type StatoSede = 'attiva' | 'sospesa' | 'chiusa'
 export type StatoSettore = 'attivo' | 'sospeso'
@@ -57,11 +59,24 @@ export interface Classe {
   created_at: string
 }
 
+export interface Ruolo {
+  id: number
+  codice: string
+  nome: string
+  descrizione: string | null
+  tipo_ruolo: TipoRuolo
+  livello_accesso: number
+  permessi: Record<string, unknown>
+  is_attivo: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface Profile {
   id: string // UUID
   nome: string
   cognome: string
-  ruolo: RuoloUtente
+  id_ruolo: number // FK a ruoli
   id_sede: number | null
   id_settore: number | null
   id_classe: number | null
@@ -175,6 +190,15 @@ export interface LogAccesso {
 export interface Database {
   public: {
     Tables: {
+      ruoli: {
+        Row: Ruolo
+        Insert: Omit<Ruolo, 'id' | 'created_at' | 'updated_at'> & {
+          id?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Omit<Ruolo, 'id'>>
+      }
       sedi: {
         Row: Sede
         Insert: Omit<Sede, 'id' | 'created_at' | 'updated_at'> & {
@@ -274,7 +298,6 @@ export interface Database {
       }
     }
     Enums: {
-      ruolo_utente: RuoloUtente
       stato_account: StatoAccount
       stato_sede: StatoSede
       stato_settore: StatoSettore
@@ -291,6 +314,7 @@ export interface Database {
 
 // Tipi estesi con relazioni (per query con join)
 export interface ProfileWithRelations extends Profile {
+  ruolo?: Ruolo | null
   sede?: Sede | null
   settore?: Settore | null
   classe?: Classe | null

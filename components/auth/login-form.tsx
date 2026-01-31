@@ -63,10 +63,10 @@ export function LoginForm() {
         return
       }
 
-      // Recupera profilo per determinare redirect
+      // Recupera profilo con ruolo per determinare redirect
       const { data: profile } = await supabase
         .from('profiles')
-        .select('ruolo')
+        .select('*, ruolo:ruoli(codice)')
         .eq('id', authData.user.id)
         .single()
 
@@ -79,8 +79,9 @@ export function LoginForm() {
 
       // Redirect basato su ruolo
       let destination = redirectTo
-      if (profile?.ruolo) {
-        switch (profile.ruolo) {
+      const ruoloCodice = (profile as any)?.ruolo?.codice
+      if (ruoloCodice) {
+        switch (ruoloCodice) {
           case 'sviluppatore':
           case 'responsabile_centro':
             destination = '/admin'

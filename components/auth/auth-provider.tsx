@@ -8,16 +8,16 @@ import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import type { User, Session } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
-import type { Profile, RuoloUtente } from '@/lib/supabase/types'
+import type { ProfileWithRelations, RuoloUtente } from '@/lib/supabase/types'
 
 interface AuthUser extends User {
-  profile?: Profile | null
+  profile?: ProfileWithRelations | null
 }
 
 interface AuthContextType {
   user: AuthUser | null
   session: Session | null
-  profile: Profile | null
+  profile: ProfileWithRelations | null
   isLoading: boolean
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
@@ -32,22 +32,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const [user, setUser] = useState<AuthUser | null>(null)
   const [session, setSession] = useState<Session | null>(null)
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [profile, setProfile] = useState<ProfileWithRelations | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Carica profilo utente
+  // Carica profilo utente con ruolo
   const loadProfile = async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('*')
+      .select('*, ruolo:ruoli(*)')
       .eq('id', userId)
       .single()
 
     if (data) {
-      setProfile(data as Profile)
+      setProfile(data as ProfileWithRelations)
     }
 
-    return data as Profile | null
+    return data as ProfileWithRelations | null
   }
 
   // Refresh profilo
@@ -266,10 +266,10 @@ export function useAuth() {
 export function useHasRole(roles: RuoloUtente | RuoloUtente[]) {
   const { profile } = useAuth()
 
-  if (!profile?.ruolo) return false
+  if (!profile?.ruolo?.codice) return false
 
   const roleArray = Array.isArray(roles) ? roles : [roles]
-  return roleArray.includes(profile.ruolo)
+  return roleArray.includes(profile.ruolo.codice as RuoloUtente)
 }
 
 /**
@@ -284,4 +284,12 @@ export function useIsAdmin() {
  */
 export function useIsDeveloper() {
   return useHasRole('sviluppatore')
+}
+
+/**
+ * Hook per verificare il tipo di ruolo (gestore, paziente, familiare)
+ */
+export function useRuoloTipo() {
+  const { profile } = useAuth()
+  return profile?.ruolo?.tipo_ruolo || null
 }

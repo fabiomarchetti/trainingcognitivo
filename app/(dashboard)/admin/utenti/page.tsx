@@ -10,10 +10,9 @@ import { dataCache } from '@/lib/cache/data-cache'
 import { useAuth } from '@/components/auth/auth-provider'
 import { RoleBadge } from '@/components/ui/badge'
 import { ConfirmModal } from '@/components/ui/modal'
-import type { Database } from '@/lib/supabase/types'
-import type { RuoloUtente } from '@/lib/supabase/types'
+import type { ProfileWithRelations } from '@/lib/supabase/types'
 
-type Profile = Database['public']['Tables']['profiles']['Row']
+type Profile = ProfileWithRelations
 
 const CACHE_KEY = 'admin:utenti'
 
@@ -29,7 +28,7 @@ export default function UtentiPage() {
   const hasLoadedRef = useRef(false)
 
   // Verifica che solo sviluppatore possa accedere
-  if (profile && profile.ruolo !== 'sviluppatore') {
+  if (profile && profile.ruolo?.codice !== 'sviluppatore') {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="bg-red-100 border-4 border-red-400 rounded-2xl p-8 max-w-md text-center">
@@ -68,8 +67,7 @@ export default function UtentiPage() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
-        .order('ruolo', { ascending: true })
+        .select('*, ruolo:ruoli(*)')
         .order('cognome', { ascending: true })
 
       if (error) {
@@ -95,7 +93,7 @@ export default function UtentiPage() {
   }
 
   useEffect(() => {
-    if (hasLoadedRef.current || profile?.ruolo !== 'sviluppatore') return
+    if (hasLoadedRef.current || profile?.ruolo?.codice !== 'sviluppatore') return
     loadUtenti()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile])
@@ -240,7 +238,7 @@ export default function UtentiPage() {
                       {utente.email_contatto || '-'}
                     </td>
                     <td className="px-4 py-4">
-                      <RoleBadge role={utente.ruolo} />
+                      <RoleBadge role={utente.ruolo?.codice || 'utente'} />
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-700">
                       {utente.stato}

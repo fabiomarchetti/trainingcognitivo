@@ -46,7 +46,7 @@ export function Header({ showNav = true }: HeaderProps) {
     })
   }
 
-  if (profile?.ruolo && ['responsabile_centro', 'educatore'].includes(profile.ruolo)) {
+  if (profile?.ruolo?.codice && ['responsabile_centro', 'educatore'].includes(profile.ruolo.codice)) {
     navLinks.push({
       href: '/dashboard',
       label: 'Dashboard',
@@ -110,8 +110,8 @@ export function Header({ showNav = true }: HeaderProps) {
                     <p className="text-sm font-medium text-gray-900 truncate max-w-[120px]">
                       {profile?.nome || user.email?.split('@')[0]}
                     </p>
-                    {profile?.ruolo && (
-                      <RoleBadge role={profile.ruolo} />
+                    {profile?.ruolo?.codice && (
+                      <RoleBadge role={profile.ruolo.codice} />
                     )}
                   </div>
                   <ChevronDown className={cn(

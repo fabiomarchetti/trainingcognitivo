@@ -5,14 +5,12 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Shield, Plus, Pencil, Trash2, RefreshCw, AlertCircle, X, Mail, Lock, User, Save } from 'lucide-react'
+import { Shield, Plus, Pencil, Trash2, RefreshCw, AlertCircle, X, Mail, Lock, User, Save, Phone, Building2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { dataCache } from '@/lib/cache/data-cache'
 import { useAuth } from '@/components/auth/auth-provider'
 import { RoleBadge } from '@/components/ui/badge'
 import { ConfirmModal } from '@/components/ui/modal'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import type { ProfileWithRelations, Ruolo } from '@/lib/supabase/types'
 
 type Profile = ProfileWithRelations
@@ -30,6 +28,21 @@ export default function StaffPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
+
+  // Edit modal state
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [staffToEdit, setStaffToEdit] = useState<Profile | null>(null)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
+  const [editFormData, setEditFormData] = useState({
+    nome: '',
+    cognome: '',
+    email_contatto: '',
+    telefono: '',
+    id_ruolo: 0,
+    stato: 'attivo' as 'attivo' | 'sospeso' | 'inattivo'
+  })
+
   const supabase = createClient()
   const isLoadingRef = useRef(false)
   const hasLoadedRef = useRef(false)
@@ -238,6 +251,71 @@ export default function StaffPage() {
     }
   }
 
+  // Apri modal modifica
+  const handleEditClick = (member: Profile) => {
+    setStaffToEdit(member)
+    setEditFormData({
+      nome: member.nome || '',
+      cognome: member.cognome || '',
+      email_contatto: member.email_contatto || '',
+      telefono: member.telefono || '',
+      id_ruolo: member.id_ruolo || 0,
+      stato: (member.stato as 'attivo' | 'sospeso' | 'inattivo') || 'attivo'
+    })
+    setEditError(null)
+    setEditModalOpen(true)
+  }
+
+  // Salva modifiche staff
+  const handleUpdateStaff = async () => {
+    if (!staffToEdit) return
+    setEditError(null)
+
+    // Validazione
+    if (!editFormData.nome.trim()) {
+      setEditError('Il nome è obbligatorio')
+      return
+    }
+    if (!editFormData.cognome.trim()) {
+      setEditError('Il cognome è obbligatorio')
+      return
+    }
+
+    setIsUpdating(true)
+
+    try {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          nome: editFormData.nome.trim(),
+          cognome: editFormData.cognome.trim(),
+          email_contatto: editFormData.email_contatto.trim() || null,
+          telefono: editFormData.telefono.trim() || null,
+          id_ruolo: editFormData.id_ruolo || null,
+          stato: editFormData.stato,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', staffToEdit.id)
+
+      if (updateError) {
+        console.error('Errore update:', updateError)
+        setEditError(`Errore: ${updateError.message}`)
+        return
+      }
+
+      // Chiudi modal e ricarica
+      setEditModalOpen(false)
+      setStaffToEdit(null)
+      dataCache.invalidate(CACHE_KEY)
+      loadStaff(true)
+    } catch (err: any) {
+      console.error('Errore aggiornamento staff:', err)
+      setEditError(err?.message || 'Errore durante l\'aggiornamento')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
   // Elimina staff
   const handleDeleteClick = (member: Profile) => {
     setStaffToDelete(member)
@@ -280,7 +358,7 @@ export default function StaffPage() {
               Gestione Staff
             </h1>
             <p className="text-white/90 mt-2 font-semibold text-lg drop-shadow">
-              Gestisci gli operatori e amministratori del portale
+              Gestisci gli operatori e amministratori del portale ({staff.length} membri)
             </p>
           </div>
           <div className="flex gap-3">
@@ -368,8 +446,14 @@ export default function StaffPage() {
                     <td className="px-4 py-4">
                       <RoleBadge role={member.ruolo?.codice || 'utente'} />
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-700">
-                      {member.stato}
+                    <td className="px-4 py-4 text-sm">
+                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                        member.stato === 'attivo' ? 'bg-green-100 text-green-700' :
+                        member.stato === 'sospeso' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {member.stato}
+                      </span>
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-600">
                       {formatDate(member.ultimo_accesso)}
@@ -377,7 +461,7 @@ export default function StaffPage() {
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={() => alert('Funzione in sviluppo: modifica staff')}
+                          onClick={() => handleEditClick(member)}
                           className="p-2 bg-yellow-400 hover:bg-yellow-500 text-white rounded-xl transition-all hover:scale-110 shadow-md"
                           title="Modifica"
                         >
@@ -436,9 +520,7 @@ export default function StaffPage() {
 
                 {/* Nome */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">
-                    Nome *
-                  </label>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Nome *</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-purple-400" />
                     <input
@@ -453,9 +535,7 @@ export default function StaffPage() {
 
                 {/* Cognome */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">
-                    Cognome *
-                  </label>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Cognome *</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-purple-400" />
                     <input
@@ -470,9 +550,7 @@ export default function StaffPage() {
 
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">
-                    Email *
-                  </label>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Email *</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-purple-400" />
                     <input
@@ -504,9 +582,7 @@ export default function StaffPage() {
 
                 {/* Ruolo */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">
-                    Ruolo *
-                  </label>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Ruolo *</label>
                   <select
                     value={formData.id_ruolo}
                     onChange={(e) => setFormData({ ...formData, id_ruolo: parseInt(e.target.value) })}
@@ -544,6 +620,162 @@ export default function StaffPage() {
                     <>
                       <Save className="h-4 w-4" />
                       Crea Staff
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Modal Modifica Staff */}
+      {editModalOpen && staffToEdit && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-50"
+            onClick={() => setEditModalOpen(false)}
+          />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md border-4 border-yellow-300">
+              {/* Header Modal */}
+              <div className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-t-2xl p-4 flex items-center justify-between">
+                <h2 className="text-xl font-black text-white flex items-center gap-2">
+                  <Pencil className="h-6 w-6" />
+                  Modifica Staff
+                </h2>
+                <button
+                  onClick={() => setEditModalOpen(false)}
+                  className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X className="h-6 w-6 text-white" />
+                </button>
+              </div>
+
+              {/* Body Modal */}
+              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                {editError && (
+                  <div className="bg-red-100 border-2 border-red-300 rounded-xl p-3 flex items-center gap-2 text-red-700">
+                    <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                    <span className="font-medium">{editError}</span>
+                  </div>
+                )}
+
+                {/* Nome */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Nome *</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-yellow-500" />
+                    <input
+                      type="text"
+                      value={editFormData.nome}
+                      onChange={(e) => setEditFormData({ ...editFormData, nome: e.target.value })}
+                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-400 focus:ring-2 focus:ring-yellow-200 font-medium"
+                      placeholder="Nome"
+                    />
+                  </div>
+                </div>
+
+                {/* Cognome */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Cognome *</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-yellow-500" />
+                    <input
+                      type="text"
+                      value={editFormData.cognome}
+                      onChange={(e) => setEditFormData({ ...editFormData, cognome: e.target.value })}
+                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-400 focus:ring-2 focus:ring-yellow-200 font-medium"
+                      placeholder="Cognome"
+                    />
+                  </div>
+                </div>
+
+                {/* Email contatto */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Email di contatto</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-yellow-500" />
+                    <input
+                      type="email"
+                      value={editFormData.email_contatto}
+                      onChange={(e) => setEditFormData({ ...editFormData, email_contatto: e.target.value })}
+                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-400 focus:ring-2 focus:ring-yellow-200 font-medium"
+                      placeholder="email@esempio.it"
+                    />
+                  </div>
+                </div>
+
+                {/* Telefono */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Telefono</label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-yellow-500" />
+                    <input
+                      type="tel"
+                      value={editFormData.telefono}
+                      onChange={(e) => setEditFormData({ ...editFormData, telefono: e.target.value })}
+                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-400 focus:ring-2 focus:ring-yellow-200 font-medium"
+                      placeholder="+39 333 1234567"
+                    />
+                  </div>
+                </div>
+
+                {/* Ruolo */}
+                {staffToEdit.ruolo?.codice !== 'sviluppatore' && (
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Ruolo</label>
+                    <select
+                      value={editFormData.id_ruolo}
+                      onChange={(e) => setEditFormData({ ...editFormData, id_ruolo: parseInt(e.target.value) })}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-400 focus:ring-2 focus:ring-yellow-200 font-medium bg-white"
+                    >
+                      {ruoliDisponibili.map((ruolo) => (
+                        <option key={ruolo.id} value={ruolo.id}>
+                          {ruolo.nome}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Stato */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Stato</label>
+                  <select
+                    value={editFormData.stato}
+                    onChange={(e) => setEditFormData({ ...editFormData, stato: e.target.value as 'attivo' | 'sospeso' | 'inattivo' })}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-yellow-400 focus:ring-2 focus:ring-yellow-200 font-medium bg-white"
+                  >
+                    <option value="attivo">Attivo</option>
+                    <option value="sospeso">Sospeso</option>
+                    <option value="inattivo">Inattivo</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Footer Modal */}
+              <div className="p-4 border-t border-gray-200 flex gap-3 justify-end">
+                <button
+                  onClick={() => setEditModalOpen(false)}
+                  className="px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={handleUpdateStaff}
+                  disabled={isUpdating}
+                  className="px-5 py-2.5 bg-gradient-to-r from-yellow-400 to-orange-400 text-white font-bold rounded-xl hover:scale-105 transition-all shadow-lg disabled:opacity-50 disabled:hover:scale-100 flex items-center gap-2"
+                >
+                  {isUpdating ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                      Salvataggio...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Salva Modifiche
                     </>
                   )}
                 </button>

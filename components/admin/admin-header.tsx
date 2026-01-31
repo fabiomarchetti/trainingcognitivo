@@ -65,9 +65,9 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                 <p className="text-sm font-bold drop-shadow">
                   {profile?.nome} {profile?.cognome}
                 </p>
-                {profile?.ruolo && (
+                {profile?.ruolo?.nome && (
                   <span className="text-xs text-yellow-200 capitalize font-semibold">
-                    {profile.ruolo}
+                    {profile.ruolo.nome}
                   </span>
                 )}
               </div>
@@ -87,9 +87,9 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                       {profile?.nome} {profile?.cognome}
                     </p>
                     <p className="text-xs text-gray-500">{user?.email}</p>
-                    {profile?.ruolo && (
+                    {profile?.ruolo?.codice && (
                       <div className="mt-2">
-                        <RoleBadge role={profile.ruolo} />
+                        <RoleBadge role={profile.ruolo.codice} />
                       </div>
                     )}
                   </div>

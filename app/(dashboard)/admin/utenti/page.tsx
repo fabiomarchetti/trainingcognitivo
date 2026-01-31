@@ -134,18 +134,6 @@ export default function UtentiPage() {
     return new Date(date).toLocaleDateString('it-IT')
   }
 
-  // Formatta ruolo
-  const formatRuolo = (ruolo: RuoloUtente) => {
-    const ruoliMap: Record<RuoloUtente, string> = {
-      'sviluppatore': 'Sviluppatore',
-      'responsabile_centro': 'Responsabile Centro',
-      'educatore': 'Educatore',
-      'utente': 'Utente',
-      'visitatore': 'Visitatore'
-    }
-    return ruoliMap[ruolo] || ruolo
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}

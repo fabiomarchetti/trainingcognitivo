@@ -60,7 +60,7 @@ export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>
 
 /**
  * Schema registrazione utente
- * Nota: ruolo ora è l'ID del ruolo (FK a tabella ruoli)
+ * Nota: ruolo è il codice del ruolo (es. 'utente'). Il trigger DB lo converte in id_ruolo.
  */
 export const registerSchema = z.object({
   nome: z
@@ -82,7 +82,7 @@ export const registerSchema = z.object({
   confirmPassword: z
     .string()
     .min(1, errorMessages.required),
-  id_ruolo: z.number().min(1, 'Seleziona un ruolo'),
+  ruolo: z.string().min(1, 'Seleziona un ruolo'),
   id_sede: z.number().nullable().optional(),
   id_settore: z.number().nullable().optional(),
   id_classe: z.number().nullable().optional(),

@@ -40,17 +40,21 @@ export async function middleware(request: NextRequest) {
 
     if (!user) return null
 
-    const { data: profile } = await supabase
+    const { data: profileData } = await supabase
       .from('profiles')
-      .select('ruolo')
+      .select('ruoli!id_ruolo(codice)')
       .eq('id', user.id)
       .single()
 
-    if (profile) {
-      cachedProfile = profile
+    if (profileData) {
+      // Estrae codice ruolo dal join
+      const ruoloCodice = (profileData as any)?.ruoli?.codice
+      if (ruoloCodice) {
+        cachedProfile = { ruolo: ruoloCodice }
+      }
     }
 
-    return profile
+    return cachedProfile
   }
 
   // Route pubbliche - consenti accesso

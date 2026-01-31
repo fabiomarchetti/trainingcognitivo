@@ -51,17 +51,22 @@ export async function POST(request: Request) {
     }
 
     // Recupera profilo per redirect
-    const { data: profile } = await supabase
+    const { data: profileData } = await supabase
       .from('profiles')
-      .select('ruolo, nome, cognome')
+      .select('nome, cognome, ruoli!id_ruolo(codice)')
       .eq('id', data.user?.id)
       .single()
+
+    // Estrae ruolo dal join
+    const ruoloCodice = (profileData as any)?.ruoli?.codice
 
     return NextResponse.json({
       user: {
         id: data.user?.id,
         email: data.user?.email,
-        ...profile,
+        nome: (profileData as any)?.nome,
+        cognome: (profileData as any)?.cognome,
+        ruolo: ruoloCodice,
       },
       session: data.session,
     })

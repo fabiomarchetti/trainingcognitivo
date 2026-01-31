@@ -60,20 +60,14 @@ export function hasRoleAccess(
     return ['responsabile_centro'].includes(ruolo)
   }
 
-  // Dashboard routes - responsabile_centro e educatore
+  // Dashboard routes - responsabile_centro, educatore, insegnante
   if (pathname.startsWith('/dashboard')) {
-    return ['responsabile_centro', 'educatore'].includes(ruolo)
+    return ['responsabile_centro', 'educatore', 'insegnante'].includes(ruolo)
   }
 
-  // Training routes - accessibili a utenti autenticati (utente, educatore, responsabile_centro)
+  // Training routes - accessibili a utenti autenticati (utente, educatore, insegnante, responsabile_centro, visitatore)
   if (pathname.startsWith('/training') || pathname.startsWith('/strumenti')) {
-    return ['utente', 'educatore', 'responsabile_centro'].includes(ruolo)
-  }
-
-  // Visitatore - accesso limitato solo a route specifiche
-  if (ruolo === 'visitatore') {
-    // TODO: definire route specifiche per visitatori
-    return pathname.startsWith('/demo') || pathname.startsWith('/training')
+    return ['utente', 'educatore', 'insegnante', 'responsabile_centro', 'visitatore'].includes(ruolo)
   }
 
   return true
@@ -88,11 +82,12 @@ export function getRedirectPathForRole(ruolo: string): string {
     case 'responsabile_centro':
       return '/admin'
     case 'educatore':
+    case 'insegnante':
       return '/dashboard'
     case 'utente':
       return '/training'
     case 'visitatore':
-      return '/demo' // TODO: creare pagina demo per visitatori
+      return '/training' // Visitatori vedono area training in modalità demo
     default:
       return '/login'
   }

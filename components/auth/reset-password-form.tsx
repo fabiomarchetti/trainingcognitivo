@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Lock, AlertCircle, CheckCircle, ArrowLeft, Sparkles } from 'lucide-react'
+import type { AuthChangeEvent } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { resetPasswordSchema, type ResetPasswordFormData } from '@/lib/utils/validation'
 import { Button } from '@/components/ui/button'
@@ -63,7 +64,7 @@ export function ResetPasswordForm() {
 
     // Ascolta eventi auth per catturare il token di recovery
     const supabase = createClient()
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent) => {
       if (event === 'PASSWORD_RECOVERY') {
         setIsValidSession(true)
       }

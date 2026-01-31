@@ -67,7 +67,7 @@ export default function StaffPage() {
 
     if (data) {
       // Escludi sviluppatore dalla lista (non può essere creato)
-      setRuoliDisponibili(data.filter(r => r.codice !== 'sviluppatore'))
+      setRuoliDisponibili(data.filter((r: Ruolo) => r.codice !== 'sviluppatore'))
     }
   }
 
@@ -110,10 +110,10 @@ export default function StaffPage() {
 
       // Filtra solo gestori (tipo_ruolo = 'gestore')
       const staffData = (data || [])
-        .filter(u => (u as any).ruoli?.tipo_ruolo === 'gestore')
-        .map(u => ({
+        .filter((u: any) => u.ruoli?.tipo_ruolo === 'gestore')
+        .map((u: any) => ({
           ...u,
-          ruolo: (u as any).ruoli,
+          ruolo: u.ruoli,
           ruoli: undefined
         }))
 

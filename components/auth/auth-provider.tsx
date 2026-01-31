@@ -6,7 +6,7 @@
 
 import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import type { User, Session } from '@supabase/supabase-js'
+import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import type { ProfileWithRelations, RuoloUtente } from '@/lib/supabase/types'
 
@@ -156,13 +156,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Questo funziona meglio in produzione Vercel Edge Runtime
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
+        // Controlla se il componente è stato smontato durante l'await
+        if (!isMounted) {
+          console.log('[AUTH PROVIDER] Componente smontato durante getSession, skip')
+          return
+        }
+
         console.log('[AUTH PROVIDER] getSession() iniziale:', {
           hasSession: !!session,
           hasError: !!sessionError
         })
 
         if (sessionError) {
-          console.error('[AUTH PROVIDER] Errore getSession():', sessionError)
+          // Ignora AbortError - è normale durante unmount/remount
+          if (sessionError.message?.includes('AbortError') || sessionError.name === 'AbortError') {
+            console.log('[AUTH PROVIDER] AbortError ignorato (normale durante navigazione)')
+          } else {
+            console.error('[AUTH PROVIDER] Errore getSession():', sessionError)
+          }
         }
 
         if (session?.user && isMounted) {
@@ -190,7 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Setup listener per aggiornamenti futuri (SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED)
         const { data } = supabase.auth.onAuthStateChange(
-          async (event, newSession) => {
+          async (event: AuthChangeEvent, newSession: Session | null) => {
             if (!isMounted) return
             console.log('[AUTH PROVIDER] Auth event:', event, 'hasSession:', !!newSession)
 
@@ -219,7 +230,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         )
         subscription = data.subscription
-      } catch (error) {
+      } catch (error: any) {
+        // Ignora AbortError - è normale durante unmount/remount in React StrictMode
+        if (error?.message?.includes('AbortError') || error?.name === 'AbortError' ||
+            (typeof error === 'string' && error.includes('AbortError'))) {
+          console.log('[AUTH PROVIDER] AbortError catch ignorato (normale durante navigazione)')
+          return // Non aggiornare stato se abortato
+        }
+
         console.error('[AUTH PROVIDER] Errore init:', error)
         if (isMounted) {
           setIsLoading(false)

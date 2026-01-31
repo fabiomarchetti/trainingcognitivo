@@ -2,12 +2,21 @@
  * Client Supabase per browser (Client Components)
  * Usare questo client nei componenti React client-side
  *
- * NOTA: createBrowserClient di @supabase/ssr gestisce già il caching internamente,
- * quindi non serve implementare un singleton manuale
+ * SINGLETON ESPLICITO per evitare problemi con AbortController
+ * in React StrictMode / Vercel Edge Runtime
  */
 import { createBrowserClient } from '@supabase/ssr'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+// Singleton globale per il client browser
+let browserClient: SupabaseClient | null = null
 
 export function createClient() {
+  // Se abbiamo già un client, riutilizzalo
+  if (browserClient) {
+    return browserClient
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -19,9 +28,26 @@ export function createClient() {
     throw new Error('Missing Supabase environment variables')
   }
 
-  // createBrowserClient gestisce il caching internamente
-  return createBrowserClient(
+  // Crea client con opzioni per evitare problemi di AbortController
+  browserClient = createBrowserClient(
     supabaseUrl,
-    supabaseAnonKey
+    supabaseAnonKey,
+    {
+      auth: {
+        // Disabilita auto-refresh token per evitare race conditions
+        autoRefreshToken: true,
+        // Persisti sessione
+        persistSession: true,
+        // Detecta sessione in altre tab
+        detectSessionInUrl: true,
+      },
+      global: {
+        headers: {
+          'x-client-info': 'trainingcognitivo-browser',
+        },
+      },
+    }
   )
+
+  return browserClient
 }

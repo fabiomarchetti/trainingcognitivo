@@ -90,10 +90,10 @@ export default function UtentiPage() {
 
       // Filtra solo pazienti (tipo_ruolo = 'paziente')
       let utentiData = (data || [])
-        .filter(u => (u as any).ruoli?.tipo_ruolo === 'paziente')
-        .map(u => ({
+        .filter((u: any) => u.ruoli?.tipo_ruolo === 'paziente')
+        .map((u: any) => ({
           ...u,
-          ruolo: (u as any).ruoli,
+          ruolo: u.ruoli,
           ruoli: undefined
         }))
 
@@ -105,8 +105,8 @@ export default function UtentiPage() {
           .eq('id_educatore', user.id)
           .eq('is_attiva', true)
 
-        const utentiAssegnati = (assegnazioni || []).map(a => a.id_utente)
-        utentiData = utentiData.filter(u => utentiAssegnati.includes(u.id))
+        const utentiAssegnati = (assegnazioni || []).map((a: { id_utente: string }) => a.id_utente)
+        utentiData = utentiData.filter((u: any) => utentiAssegnati.includes(u.id))
       }
 
       console.log('[UTENTI] Dati caricati:', utentiData.length, 'utenti')

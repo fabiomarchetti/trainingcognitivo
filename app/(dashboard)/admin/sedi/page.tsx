@@ -69,6 +69,11 @@ export default function SediPage() {
       console.log('[SEDI] Query completata', { hasData: !!data, hasError: !!error })
 
       if (error) {
+        // Ignora AbortError
+        if (error.message?.includes('AbortError') || error.details?.includes('AbortError')) {
+          console.log('[SEDI] AbortError query ignorato')
+          return
+        }
         console.error('[SEDI] Errore query:', error)
         setError(`Errore caricamento sedi: ${error.message}`)
         throw error
@@ -81,6 +86,16 @@ export default function SediPage() {
       dataCache.set(CACHE_KEY, sedeData)
       hasLoadedRef.current = true
     } catch (err: any) {
+      // Ignora AbortError - è normale durante navigazione/unmount
+      const isAbortError = err?.message?.includes('AbortError') ||
+                          err?.name === 'AbortError' ||
+                          err?.details?.includes('AbortError')
+
+      if (isAbortError) {
+        console.log('[SEDI] AbortError ignorato (normale durante navigazione)')
+        return // Non aggiornare stato se abortato
+      }
+
       console.error('[SEDI] Errore caricamento sedi:', err)
       console.error('[SEDI] Dettaglio errore:', {
         name: err?.name,

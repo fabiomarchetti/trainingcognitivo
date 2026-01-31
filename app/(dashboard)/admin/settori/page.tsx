@@ -143,8 +143,10 @@ export default function SettoriPage() {
       }
 
       // Combina i risultati
-      const classiCounts = classiData?.reduce((acc, classe) => {
-        acc[classe.id_settore] = (acc[classe.id_settore] || 0) + 1
+      const classiCounts = classiData?.reduce((acc: Record<number, number>, classe: { id_settore: number | null }) => {
+        if (classe.id_settore !== null) {
+          acc[classe.id_settore] = (acc[classe.id_settore] || 0) + 1
+        }
         return acc
       }, {} as Record<number, number>) || {}
 
@@ -215,15 +217,15 @@ export default function SettoriPage() {
       }
 
       // Crea mappa settori per lookup veloce
-      const settoriMap = settoriData?.reduce((acc, settore) => {
+      const settoriMap = settoriData?.reduce((acc: Record<number, string>, settore: { id: number; nome: string }) => {
         acc[settore.id] = settore.nome
         return acc
       }, {} as Record<number, string>) || {}
 
       // Combina i risultati
-      const classiWithSettore = (classiData || []).map(c => ({
+      const classiWithSettore = (classiData || []).map((c: Classe) => ({
         ...c,
-        settore_nome: settoriMap[c.id_settore] || '-',
+        settore_nome: settoriMap[c.id_settore ?? 0] || '-',
       }))
 
       console.log('[CLASSI] Dati caricati:', classiWithSettore.length, 'classi')

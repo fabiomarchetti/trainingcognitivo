@@ -40,6 +40,11 @@ export default function SediPage() {
       return
     }
 
+    // Segna che abbiamo tentato il caricamento (previene loop)
+    if (!forceReload) {
+      hasLoadedRef.current = true
+    }
+
     // Controlla cache prima di caricare
     if (!forceReload) {
       const cached = dataCache.get<Sede[]>(CACHE_KEY)
@@ -47,7 +52,6 @@ export default function SediPage() {
         console.log('[SEDI] Dati trovati in cache:', cached.length, 'sedi')
         setSedi(cached)
         setIsLoading(false)
-        hasLoadedRef.current = true
         return
       }
     }
@@ -84,7 +88,6 @@ export default function SediPage() {
       setSedi(sedeData)
       // Salva in cache
       dataCache.set(CACHE_KEY, sedeData)
-      hasLoadedRef.current = true
     } catch (err: any) {
       // Ignora AbortError - è normale durante navigazione/unmount
       const isAbortError = err?.message?.includes('AbortError') ||

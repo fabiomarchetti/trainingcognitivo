@@ -45,3 +45,6 @@ supabase/
 
 # documenti interni
 documenti/
+
+# Export database Aruba (dati sensibili)
+esportazione_db_aruba/

@@ -57,6 +57,11 @@ export default function UtentiPage() {
       return
     }
 
+    // Segna che abbiamo tentato il caricamento (previene loop)
+    if (!forceReload) {
+      hasLoadedRef.current = true
+    }
+
     // Controlla cache
     if (!forceReload) {
       const cached = dataCache.get<Profile[]>(CACHE_KEY)
@@ -64,7 +69,6 @@ export default function UtentiPage() {
         console.log('[UTENTI] Dati trovati in cache:', cached.length, 'utenti')
         setUtenti(cached)
         setIsLoading(false)
-        hasLoadedRef.current = true
         return
       }
     }
@@ -112,7 +116,6 @@ export default function UtentiPage() {
       console.log('[UTENTI] Dati caricati:', utentiData.length, 'utenti')
       setUtenti(utentiData as any)
       dataCache.set(CACHE_KEY, utentiData)
-      hasLoadedRef.current = true
     } catch (err: any) {
       // Ignora AbortError - è normale durante navigazione/unmount
       const isAbortError = err?.message?.includes('AbortError') ||

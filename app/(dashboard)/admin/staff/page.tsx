@@ -96,9 +96,15 @@ export default function StaffPage() {
 
   // Carica staff (solo tipo_ruolo = 'gestore')
   const loadStaff = async (forceReload = false) => {
+    // Evita chiamate multiple
     if (isLoadingRef.current) {
       console.log('[STAFF] Caricamento già in corso, skip')
       return
+    }
+
+    // Segna che abbiamo tentato il caricamento (previene loop)
+    if (!forceReload) {
+      hasLoadedRef.current = true
     }
 
     // Controlla cache
@@ -108,7 +114,6 @@ export default function StaffPage() {
         console.log('[STAFF] Dati trovati in cache:', cached.length, 'staff')
         setStaff(cached)
         setIsLoading(false)
-        hasLoadedRef.current = true
         return
       }
     }
@@ -143,7 +148,6 @@ export default function StaffPage() {
       console.log('[STAFF] Dati caricati:', staffData.length, 'staff')
       setStaff(staffData as any)
       dataCache.set(CACHE_KEY, staffData)
-      hasLoadedRef.current = true
     } catch (err: any) {
       // Ignora AbortError - è normale durante navigazione/unmount
       const isAbortError = err?.message?.includes('AbortError') ||

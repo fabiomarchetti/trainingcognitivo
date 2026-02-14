@@ -3,6 +3,7 @@
  */
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -19,16 +20,28 @@ import {
   Settings,
   FileText,
   KeyRound,
-  X
+  X,
+  Image,
+  Wrench
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 
 interface SidebarProps {
   isOpen?: boolean
   onClose?: () => void
 }
 
-const menuItems = [
+interface MenuItem {
+  label?: string
+  href?: string
+  icon?: any
+  exact?: boolean
+  type?: string
+  developerOnly?: boolean
+}
+
+const menuItems: MenuItem[] = [
   {
     label: 'Panoramica',
     href: '/admin',
@@ -95,10 +108,54 @@ const menuItems = [
     href: '/admin/log-accessi',
     icon: FileText,
   },
+  { type: 'divider', developerOnly: true },
+  {
+    label: 'Tools Sviluppatore',
+    href: '/tools/genera-icone',
+    icon: Wrench,
+    developerOnly: true,
+  },
 ]
 
 export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
   const pathname = usePathname()
+  const [userRole, setUserRole] = useState<string>('')
+
+  // Carica ruolo utente
+  useEffect(() => {
+    const loadUserRole = async () => {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        console.log('[Sidebar] User:', user?.id)
+        if (user) {
+          // JOIN con tabella ruoli per ottenere il codice del ruolo
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('id_ruolo, ruoli(codice)')
+            .eq('id', user.id)
+            .single()
+          console.log('[Sidebar] Profile:', profile, 'Error:', error)
+          if (profile && profile.ruoli) {
+            const ruoloCodice = (profile.ruoli as any).codice
+            setUserRole(ruoloCodice)
+            console.log('[Sidebar] Ruolo impostato:', ruoloCodice)
+          }
+        }
+      } catch (err) {
+        console.error('[Sidebar] Errore caricamento ruolo:', err)
+      }
+    }
+    loadUserRole()
+  }, [])
+
+  // Filtra menu items in base al ruolo
+  const filteredMenuItems = menuItems.filter(item => {
+    if (item.developerOnly && userRole !== 'sviluppatore') {
+      return false
+    }
+    return true
+  })
 
   return (
     <>
@@ -135,7 +192,7 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
 
         {/* Menu Items */}
         <nav className="flex-1 overflow-y-auto py-4 px-3">
-          {menuItems.map((item, index) => {
+          {filteredMenuItems.map((item, index) => {
             if (item.type === 'divider') {
               return <div key={index} className="my-2 border-t border-white/20" />
             }

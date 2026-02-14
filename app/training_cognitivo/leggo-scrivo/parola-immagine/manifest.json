@@ -1,0 +1,26 @@
+{
+  "name": "Parola → Immagine",
+  "short_name": "Parola-Img",
+  "description": "Esercizio di associazione: data una parola, scegliere l'immagine corrispondente",
+  "start_url": "/training_cognitivo/leggo-scrivo/parola-immagine",
+  "display": "standalone",
+  "background_color": "#FFF7ED",
+  "theme_color": "#F97316",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "games"],
+  "lang": "it-IT"
+}

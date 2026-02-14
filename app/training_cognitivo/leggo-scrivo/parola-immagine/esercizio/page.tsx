@@ -6,9 +6,7 @@
  */
 'use client'
 
-export const dynamic = 'force-dynamic'
-
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -24,7 +22,20 @@ interface Utente {
   cognome: string
 }
 
+// Componente wrapper con Suspense
 export default function EsercizioPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-100 flex items-center justify-center">
+        <Loader2 className="h-12 w-12 text-orange-500 animate-spin" />
+      </div>
+    }>
+      <EsercizioContent />
+    </Suspense>
+  )
+}
+
+function EsercizioContent() {
   const supabase = createClient()
   const searchParams = useSearchParams()
   const utenteParam = searchParams.get('utente')

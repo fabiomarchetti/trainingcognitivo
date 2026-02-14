@@ -6,13 +6,14 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Users, Plus, Pencil, Trash2, RefreshCw, AlertCircle, UserPlus, Link2 } from 'lucide-react'
+import { Users, Plus, Pencil, Trash2, RefreshCw, AlertCircle, UserPlus, Link2, ArrowUpDown, ArrowUp, ArrowDown, Download, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { dataCache } from '@/lib/cache/data-cache'
 import { useAuth } from '@/components/auth/auth-provider'
 import { StatusBadge } from '@/components/ui/badge'
 import { ConfirmModal } from '@/components/ui/modal'
-import type { ProfileWithRelations } from '@/lib/supabase/types'
+import { UtenteModal } from '@/components/admin/utente-modal'
+import type { ProfileWithRelations, Sede, Settore, Classe, Ruolo } from '@/lib/supabase/types'
 
 type Profile = ProfileWithRelations
 
@@ -21,10 +22,29 @@ const CACHE_KEY = 'admin:utenti'
 export default function UtentiPage() {
   const { profile, user } = useAuth()
   const [utenti, setUtenti] = useState<Profile[]>([])
+  const [sedi, setSedi] = useState<Sede[]>([])
+  const [settori, setSettori] = useState<Settore[]>([])
+  const [classi, setClassi] = useState<Classe[]>([])
+  const [ruoloUtente, setRuoloUtente] = useState<Ruolo | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Modal states
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [utenteToDelete, setUtenteToDelete] = useState<Profile | null>(null)
+  const [utenteModalOpen, setUtenteModalOpen] = useState(false)
+  const [utenteToEdit, setUtenteToEdit] = useState<Profile | null>(null)
+
+  // Import da Aruba
+  const [isImporting, setIsImporting] = useState(false)
+  const [importResult, setImportResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  // Sorting state
+  type SortColumn = 'nome' | 'cognome' | 'sede' | 'settore' | 'classe' | 'stato' | 'ultimo_accesso'
+  type SortDirection = 'asc' | 'desc'
+  const [sortColumn, setSortColumn] = useState<SortColumn>('cognome')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+
   const supabase = createClient()
   const isLoadingRef = useRef(false)
   const hasLoadedRef = useRef(false)
@@ -48,6 +68,25 @@ export default function UtentiPage() {
         </div>
       </div>
     )
+  }
+
+  // Carica dati di supporto (sedi, settori, classi, ruolo utente)
+  const loadSupportData = async () => {
+    try {
+      const [sediRes, settoriRes, classiRes, ruoloRes] = await Promise.all([
+        supabase.from('sedi').select('*').eq('stato', 'attiva').order('nome'),
+        supabase.from('settori').select('*').eq('stato', 'attivo').order('ordine'),
+        supabase.from('classi').select('*').eq('stato', 'attiva').order('ordine'),
+        supabase.from('ruoli').select('*').eq('codice', 'utente').single()
+      ])
+
+      if (sediRes.data) setSedi(sediRes.data)
+      if (settoriRes.data) setSettori(settoriRes.data)
+      if (classiRes.data) setClassi(classiRes.data)
+      if (ruoloRes.data) setRuoloUtente(ruoloRes.data)
+    } catch (err) {
+      console.error('[UTENTI] Errore caricamento dati supporto:', err)
+    }
   }
 
   // Carica utenti (solo tipo_ruolo = 'paziente')
@@ -79,12 +118,17 @@ export default function UtentiPage() {
     setIsLoading(true)
     setError(null)
     try {
-      let query = supabase
+      // Query con join per sedi, settori, classi
+      const { data, error } = await supabase
         .from('profiles')
-        .select('*, ruoli!id_ruolo(*)')
+        .select(`
+          *,
+          ruoli!id_ruolo(*),
+          sedi:id_sede(id, nome),
+          settori:id_settore(id, nome),
+          classi:id_classe(id, nome)
+        `)
         .order('cognome', { ascending: true })
-
-      const { data, error } = await query
 
       if (error) {
         console.error('[UTENTI] Errore query:', error)
@@ -92,13 +136,19 @@ export default function UtentiPage() {
         throw error
       }
 
-      // Filtra solo pazienti (tipo_ruolo = 'paziente')
+      // Filtra solo pazienti (tipo_ruolo = 'paziente') e non eliminati
       let utentiData = (data || [])
-        .filter((u: any) => u.ruoli?.tipo_ruolo === 'paziente')
+        .filter((u: any) => u.ruoli?.tipo_ruolo === 'paziente' && u.stato !== 'eliminato')
         .map((u: any) => ({
           ...u,
           ruolo: u.ruoli,
-          ruoli: undefined
+          sede: u.sedi,
+          settore: u.settori,
+          classe: u.classi,
+          ruoli: undefined,
+          sedi: undefined,
+          settori: undefined,
+          classi: undefined
         }))
 
       // Se l'utente è un educatore, filtra solo i propri utenti assegnati
@@ -117,13 +167,13 @@ export default function UtentiPage() {
       setUtenti(utentiData as any)
       dataCache.set(CACHE_KEY, utentiData)
     } catch (err: any) {
-      // Ignora AbortError - è normale durante navigazione/unmount
+      // Ignora AbortError
       const isAbortError = err?.message?.includes('AbortError') ||
                           err?.name === 'AbortError' ||
                           err?.details?.includes('AbortError')
 
       if (isAbortError) {
-        console.log('[UTENTI] AbortError ignorato (normale durante navigazione)')
+        console.log('[UTENTI] AbortError ignorato')
         return
       }
       console.error('[UTENTI] Errore caricamento utenti:', err)
@@ -139,8 +189,68 @@ export default function UtentiPage() {
   useEffect(() => {
     if (hasLoadedRef.current || !canAccess) return
     loadUtenti()
+    loadSupportData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile])
+
+  // Apri modal creazione
+  const handleOpenCreateModal = () => {
+    setUtenteToEdit(null)
+    setUtenteModalOpen(true)
+  }
+
+  // Apri modal modifica
+  const handleEditClick = (utente: Profile) => {
+    setUtenteToEdit(utente)
+    setUtenteModalOpen(true)
+  }
+
+  // Chiudi modal
+  const handleCloseModal = () => {
+    setUtenteModalOpen(false)
+    setUtenteToEdit(null)
+  }
+
+  // Successo operazione
+  const handleSuccess = () => {
+    dataCache.invalidate(CACHE_KEY)
+    loadUtenti(true)
+  }
+
+  // Importa utenti da Aruba
+  const handleImportAruba = async () => {
+    setIsImporting(true)
+    setImportResult(null)
+
+    try {
+      const response = await fetch('/api/seed/utenti', { method: 'POST' })
+      const data = await response.json()
+
+      if (data.success) {
+        setImportResult({
+          success: true,
+          message: data.message
+        })
+        // Ricarica la lista
+        dataCache.invalidate(CACHE_KEY)
+        loadUtenti(true)
+      } else {
+        setImportResult({
+          success: false,
+          message: data.error || 'Errore durante l\'importazione'
+        })
+      }
+    } catch (err: any) {
+      setImportResult({
+        success: false,
+        message: err?.message || 'Errore di connessione'
+      })
+    } finally {
+      setIsImporting(false)
+      // Nascondi il messaggio dopo 5 secondi
+      setTimeout(() => setImportResult(null), 5000)
+    }
+  }
 
   // Elimina utente
   const handleDeleteClick = (utente: Profile) => {
@@ -152,18 +262,25 @@ export default function UtentiPage() {
     if (!utenteToDelete) return
 
     try {
-      // Elimina da auth.users (cascata su profiles)
-      const { error } = await supabase.auth.admin.deleteUser(utenteToDelete.id)
+      // Elimina fisicamente l'utente tramite API admin
+      const response = await fetch('/api/admin/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: utenteToDelete.id })
+      })
 
-      if (error) throw error
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.error)
+      }
 
       setDeleteModalOpen(false)
       setUtenteToDelete(null)
       dataCache.invalidate(CACHE_KEY)
       loadUtenti(true)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Errore eliminazione utente:', err)
-      alert('Errore durante l\'eliminazione dell\'utente')
+      alert(`Errore durante l'eliminazione: ${err.message}`)
     }
   }
 
@@ -172,6 +289,70 @@ export default function UtentiPage() {
     if (!date) return '-'
     return new Date(date).toLocaleDateString('it-IT')
   }
+
+  // Gestione ordinamento
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
+  // Icona ordinamento
+  const SortIcon = ({ column }: { column: SortColumn }) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="h-4 w-4 opacity-50" />
+    }
+    return sortDirection === 'asc'
+      ? <ArrowUp className="h-4 w-4" />
+      : <ArrowDown className="h-4 w-4" />
+  }
+
+  // Utenti ordinati
+  const sortedUtenti = [...utenti].sort((a, b) => {
+    let valueA: string | number | null = null
+    let valueB: string | number | null = null
+
+    switch (sortColumn) {
+      case 'nome':
+        valueA = a.nome?.toLowerCase() || ''
+        valueB = b.nome?.toLowerCase() || ''
+        break
+      case 'cognome':
+        valueA = a.cognome?.toLowerCase() || ''
+        valueB = b.cognome?.toLowerCase() || ''
+        break
+      case 'sede':
+        valueA = (a as any).sede?.nome?.toLowerCase() || ''
+        valueB = (b as any).sede?.nome?.toLowerCase() || ''
+        break
+      case 'settore':
+        valueA = (a as any).settore?.nome?.toLowerCase() || ''
+        valueB = (b as any).settore?.nome?.toLowerCase() || ''
+        break
+      case 'classe':
+        valueA = (a as any).classe?.nome?.toLowerCase() || ''
+        valueB = (b as any).classe?.nome?.toLowerCase() || ''
+        break
+      case 'stato':
+        valueA = a.stato || ''
+        valueB = b.stato || ''
+        break
+      case 'ultimo_accesso':
+        valueA = a.ultimo_accesso ? new Date(a.ultimo_accesso).getTime() : 0
+        valueB = b.ultimo_accesso ? new Date(b.ultimo_accesso).getTime() : 0
+        break
+    }
+
+    if (valueA === null || valueA === '') return 1
+    if (valueB === null || valueB === '') return -1
+
+    if (valueA < valueB) return sortDirection === 'asc' ? -1 : 1
+    if (valueA > valueB) return sortDirection === 'asc' ? 1 : -1
+    return 0
+  })
 
   return (
     <div className="space-y-6">
@@ -185,8 +366,8 @@ export default function UtentiPage() {
             </h1>
             <p className="text-white/90 mt-2 font-semibold text-lg drop-shadow">
               {ruoloCodice === 'educatore'
-                ? 'I tuoi utenti assegnati'
-                : 'Gestisci gli utenti/pazienti del sistema'
+                ? `I tuoi utenti assegnati (${utenti.length})`
+                : `Gestisci gli utenti/pazienti del sistema (${utenti.length})`
               }
             </p>
           </div>
@@ -201,9 +382,28 @@ export default function UtentiPage() {
               <RefreshCw className="h-5 w-5" />
               Aggiorna
             </button>
+            {ruoloCodice === 'sviluppatore' && (
+              <button
+                onClick={handleImportAruba}
+                disabled={isImporting}
+                className="flex items-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold transition-all shadow-lg hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+              >
+                {isImporting ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Importazione...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-5 w-5" />
+                    Importa da Aruba
+                  </>
+                )}
+              </button>
+            )}
             {canCreate && (
               <button
-                onClick={() => alert('Funzione in sviluppo: crea nuovo utente')}
+                onClick={handleOpenCreateModal}
                 className="flex items-center gap-2 px-5 py-3 bg-white text-teal-600 rounded-2xl font-bold hover:scale-110 transition-all shadow-xl hover:shadow-2xl"
               >
                 <UserPlus className="h-5 w-5" />
@@ -213,6 +413,22 @@ export default function UtentiPage() {
           </div>
         </div>
       </div>
+
+      {/* Messaggio risultato import */}
+      {importResult && (
+        <div className={`p-4 rounded-2xl border-2 flex items-center gap-3 ${
+          importResult.success
+            ? 'bg-green-100 border-green-400 text-green-800'
+            : 'bg-red-100 border-red-400 text-red-800'
+        }`}>
+          {importResult.success ? (
+            <Download className="h-6 w-6" />
+          ) : (
+            <AlertCircle className="h-6 w-6" />
+          )}
+          <span className="font-bold">{importResult.message}</span>
+        </div>
+      )}
 
       {/* Info per educatori */}
       {ruoloCodice === 'educatore' && (
@@ -259,7 +475,7 @@ export default function UtentiPage() {
             </p>
             {canCreate && (
               <button
-                onClick={() => alert('Funzione in sviluppo: crea nuovo utente')}
+                onClick={handleOpenCreateModal}
                 className="mt-4 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-bold transition-all"
               >
                 <UserPlus className="h-5 w-5 inline mr-2" />
@@ -272,18 +488,74 @@ export default function UtentiPage() {
             <table className="w-full">
               <thead>
                 <tr className="bg-gradient-to-r from-teal-500 to-green-500 text-white">
-                  <th className="px-4 py-4 text-left text-sm font-black uppercase">Nome</th>
-                  <th className="px-4 py-4 text-left text-sm font-black uppercase">Cognome</th>
-                  <th className="px-4 py-4 text-left text-sm font-black uppercase">Sede</th>
-                  <th className="px-4 py-4 text-left text-sm font-black uppercase">Settore</th>
-                  <th className="px-4 py-4 text-left text-sm font-black uppercase">Classe</th>
-                  <th className="px-4 py-4 text-left text-sm font-black uppercase">Stato</th>
-                  <th className="px-4 py-4 text-left text-sm font-black uppercase">Ultimo Accesso</th>
+                  <th
+                    className="px-4 py-4 text-left text-sm font-black uppercase cursor-pointer hover:bg-white/10 transition-colors"
+                    onClick={() => handleSort('cognome')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Cognome
+                      <SortIcon column="cognome" />
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-4 text-left text-sm font-black uppercase cursor-pointer hover:bg-white/10 transition-colors"
+                    onClick={() => handleSort('nome')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Nome
+                      <SortIcon column="nome" />
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-4 text-left text-sm font-black uppercase cursor-pointer hover:bg-white/10 transition-colors"
+                    onClick={() => handleSort('sede')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Sede
+                      <SortIcon column="sede" />
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-4 text-left text-sm font-black uppercase cursor-pointer hover:bg-white/10 transition-colors"
+                    onClick={() => handleSort('settore')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Settore
+                      <SortIcon column="settore" />
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-4 text-left text-sm font-black uppercase cursor-pointer hover:bg-white/10 transition-colors"
+                    onClick={() => handleSort('classe')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Classe
+                      <SortIcon column="classe" />
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-4 text-left text-sm font-black uppercase cursor-pointer hover:bg-white/10 transition-colors"
+                    onClick={() => handleSort('stato')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Stato
+                      <SortIcon column="stato" />
+                    </div>
+                  </th>
+                  <th
+                    className="px-4 py-4 text-left text-sm font-black uppercase cursor-pointer hover:bg-white/10 transition-colors"
+                    onClick={() => handleSort('ultimo_accesso')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Ultimo Accesso
+                      <SortIcon column="ultimo_accesso" />
+                    </div>
+                  </th>
                   <th className="px-4 py-4 text-center text-sm font-black uppercase">Azioni</th>
                 </tr>
               </thead>
               <tbody>
-                {utenti.map((utente, index) => (
+                {sortedUtenti.map((utente, index) => (
                   <tr
                     key={utente.id}
                     className={`border-b border-gray-200 hover:bg-teal-50 transition-colors ${
@@ -291,19 +563,19 @@ export default function UtentiPage() {
                     }`}
                   >
                     <td className="px-4 py-4 text-sm font-semibold text-gray-900">
-                      {utente.nome}
-                    </td>
-                    <td className="px-4 py-4 text-sm font-semibold text-gray-900">
                       {utente.cognome}
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-700">
-                      {utente.id_sede || '-'}
+                    <td className="px-4 py-4 text-sm font-semibold text-gray-900">
+                      {utente.nome}
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-700">
-                      {utente.id_settore || '-'}
+                      {(utente as any).sede?.nome || '-'}
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-700">
-                      {utente.id_classe || '-'}
+                      {(utente as any).settore?.nome || '-'}
+                    </td>
+                    <td className="px-4 py-4 text-sm text-gray-700">
+                      {(utente as any).classe?.nome || '-'}
                     </td>
                     <td className="px-4 py-4">
                       <StatusBadge status={utente.stato} />
@@ -314,7 +586,7 @@ export default function UtentiPage() {
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={() => alert('Funzione in sviluppo: modifica utente')}
+                          onClick={() => handleEditClick(utente)}
                           className="p-2 bg-yellow-400 hover:bg-yellow-500 text-white rounded-xl transition-all hover:scale-110 shadow-md"
                           title="Modifica"
                         >
@@ -339,6 +611,18 @@ export default function UtentiPage() {
         )}
       </div>
 
+      {/* Modal Creazione/Modifica Utente */}
+      <UtenteModal
+        isOpen={utenteModalOpen}
+        onClose={handleCloseModal}
+        onSuccess={handleSuccess}
+        utente={utenteToEdit}
+        sedi={sedi}
+        settori={settori}
+        classi={classi}
+        idRuoloUtente={ruoloUtente?.id || 0}
+      />
+
       {/* Modal Conferma Eliminazione */}
       <ConfirmModal
         isOpen={deleteModalOpen}
@@ -348,7 +632,7 @@ export default function UtentiPage() {
         }}
         onConfirm={handleDeleteConfirm}
         title="Elimina Utente"
-        message={`Sei sicuro di voler eliminare l'utente "${utenteToDelete?.nome} ${utenteToDelete?.cognome}"? Questa azione eliminerà anche l'account dall'autenticazione e non può essere annullata.`}
+        message={`Sei sicuro di voler eliminare l'utente "${utenteToDelete?.cognome} ${utenteToDelete?.nome}"? L'utente verrà disattivato e non potrà più accedere.`}
         confirmText="Elimina"
         variant="danger"
       />

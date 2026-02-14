@@ -12,6 +12,7 @@
 ## 1. Spostare la Cartella (Opzionale)
 
 Sposta `trainingcognitivo` nella posizione desiderata:
+
 ```bash
 mv /Applications/MAMP/htdocs/trainingcognitivo ~/Projects/nextjs/
 ```
@@ -33,11 +34,11 @@ mv /Applications/MAMP/htdocs/trainingcognitivo ~/Projects/nextjs/
 
 Durante l'import (o dopo in Settings → Environment Variables), aggiungi:
 
-| Nome | Valore |
-|------|--------|
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://hrmrndmjhriehavqfquj.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhybXJuZG1qaHJpZWhhdnFmcXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NjE3MTYsImV4cCI6MjA4NDEzNzcxNn0.8WUuUNrMuRCjlda70wOh1kg8QLjUo5M-hEDkW_aHpRM` |
-| `SUPABASE_SERVICE_ROLE_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhybXJuZG1qaHJpZWhhdnFmcXVqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODU2MTcxNiwiZXhwIjoyMDg0MTM3NzE2fQ.XCQy0V38tiMWPSpExr3ggqrQCoTpF7MVSPZPQ64yxZM` |
+| Nome                            | Valore                                                                                                                                                                                                                        |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | `https://hrmrndmjhriehavqfquj.supabase.co`                                                                                                                                                                                    |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhybXJuZG1qaHJpZWhhdnFmcXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NjE3MTYsImV4cCI6MjA4NDEzNzcxNn0.8WUuUNrMuRCjlda70wOh1kg8QLjUo5M-hEDkW_aHpRM`            |
+| `SUPABASE_SERVICE_ROLE_KEY`     | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhybXJuZG1qaHJpZWhhdnFmcXVqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODU2MTcxNiwiZXhwIjoyMDg0MTM3NzE2fQ.XCQy0V38tiMWPSpExr3ggqrQCoTpF7MVSPZPQ64yxZM` |
 
 **IMPORTANTE**: Seleziona tutti gli ambienti (Production, Preview, Development)
 
@@ -64,22 +65,26 @@ Durante l'import (o dopo in Settings → Environment Variables), aggiungi:
 Apri la cartella in VS Code e avvia Claude Code per continuare con:
 
 ### Fase 2 - Sistema Auth Completo
+
 - Logout
 - Forgot password
 - Protezione route complete
 
 ### Fase 3 - Pannello Admin
+
 - CRUD utenti
 - CRUD sedi
 - CRUD settori/classi
 - CRUD categorie/esercizi
 
 ### Fase 4 - Dashboard Educatore
+
 - Lista utenti assegnati
 - Statistiche
 - Assegnazione esercizi
 
 ### Fase 5-6 - Migrazione Esercizi
+
 - Causa effetto
 - Categorizzazione
 - Memoria

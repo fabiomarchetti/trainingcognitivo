@@ -6,7 +6,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Shield, Users, Heart, AlertCircle } from 'lucide-react'
+import { Shield, Users, Heart, AlertCircle, Plus } from 'lucide-react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -97,14 +98,60 @@ export default function RuoliPage() {
       familiare: 'bg-pink-100 text-pink-700',
     }
 
+    // Mappa per visualizzare etichette diverse
+    const labels: Record<string, string> = {
+      gestore: 'Gestore',
+      paziente: 'Utente',
+      familiare: 'Familiare',
+    }
+
     return (
       <Badge variant="outline" className={colors[tipo as keyof typeof colors] || ''}>
         <span className="flex items-center gap-1">
           {getTipoRuoloIcon(tipo)}
-          {tipo.charAt(0).toUpperCase() + tipo.slice(1)}
+          {labels[tipo] || tipo.charAt(0).toUpperCase() + tipo.slice(1)}
         </span>
       </Badge>
     )
+  }
+
+  // Determina la pagina di gestione in base al codice ruolo
+  const getAddHref = (codice: string) => {
+    switch (codice) {
+      case 'educatore':
+        return '/admin/educatori'
+      case 'utente':
+        return '/admin/utenti'
+      default:
+        // Staff: sviluppatore, responsabile_centro, insegnante, visitatore
+        return '/admin/staff'
+    }
+  }
+
+  // Mappa nomi ruolo per visualizzazione
+  const getDisplayName = (nome: string) => {
+    if (nome.toLowerCase() === 'paziente') return 'Utente'
+    return nome
+  }
+
+  // Colore del bottone in base al tipo ruolo
+  const getAddButtonColor = (codice: string) => {
+    switch (codice) {
+      case 'sviluppatore':
+        return 'bg-purple-500 hover:bg-purple-600'
+      case 'responsabile_centro':
+        return 'bg-blue-500 hover:bg-blue-600'
+      case 'educatore':
+        return 'bg-teal-500 hover:bg-teal-600'
+      case 'insegnante':
+        return 'bg-amber-500 hover:bg-amber-600'
+      case 'visitatore':
+        return 'bg-gray-500 hover:bg-gray-600'
+      case 'utente':
+        return 'bg-emerald-500 hover:bg-emerald-600'
+      default:
+        return 'bg-blue-500 hover:bg-blue-600'
+    }
   }
 
   if (authLoading || isLoading) {
@@ -133,17 +180,25 @@ export default function RuoliPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {ruoli.map((ruolo) => (
-          <Card key={ruolo.id} className="hover:shadow-lg transition-shadow">
+          <Card key={ruolo.id} className="hover:shadow-lg transition-shadow relative">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <CardTitle className="text-xl flex items-center gap-2">
-                    {ruolo.nome}
+                    {getDisplayName(ruolo.nome)}
                   </CardTitle>
                   <CardDescription className="mt-1 font-mono text-xs">
                     {ruolo.codice}
                   </CardDescription>
                 </div>
+                <Link
+                  href={getAddHref(ruolo.codice)}
+                  prefetch={false}
+                  className={`${getAddButtonColor(ruolo.codice)} text-white rounded-xl p-2.5 transition-all hover:scale-110 shadow-lg border-2 border-white`}
+                  title={`Aggiungi ${getDisplayName(ruolo.nome)}`}
+                >
+                  <Plus className="h-5 w-5" strokeWidth={3} />
+                </Link>
               </div>
             </CardHeader>
 

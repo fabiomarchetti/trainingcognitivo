@@ -9,18 +9,15 @@ import {
   BarChart3,
   Building2,
   FolderTree,
-  UserCog,
   Users,
   Shield,
   GraduationCap,
-  Heart,
   ClipboardList,
   FolderOpen,
   Puzzle,
   TrendingUp,
   Settings,
   FileText,
-  SlidersHorizontal,
   KeyRound,
   X
 } from 'lucide-react'
@@ -37,17 +34,6 @@ const menuItems = [
     href: '/admin',
     icon: BarChart3,
     exact: true,
-  },
-  { type: 'divider' },
-  {
-    label: 'Gestione Staff',
-    href: '/admin/staff',
-    icon: Shield,
-  },
-  {
-    label: 'Gestione Utenti',
-    href: '/admin/utenti',
-    icon: Users,
   },
   {
     label: 'Ruoli',
@@ -67,9 +53,19 @@ const menuItems = [
   },
   { type: 'divider' },
   {
-    label: 'Assegna Esercizi',
-    href: '/admin/assegna-esercizi',
-    icon: ClipboardList,
+    label: 'Gestione Staff',
+    href: '/admin/staff',
+    icon: Shield,
+  },
+  {
+    label: 'Gestione Educatori',
+    href: '/admin/educatori',
+    icon: GraduationCap,
+  },
+  {
+    label: 'Gestione Utenti',
+    href: '/admin/utenti',
+    icon: Users,
   },
   { type: 'divider' },
   {
@@ -82,6 +78,11 @@ const menuItems = [
     href: '/admin/esercizi',
     icon: Puzzle,
   },
+  {
+    label: 'Assegna Esercizi',
+    href: '/admin/assegna-esercizi',
+    icon: ClipboardList,
+  },
   { type: 'divider' },
   {
     label: 'Risultati',
@@ -90,19 +91,9 @@ const menuItems = [
   },
   { type: 'divider' },
   {
-    label: 'Sistema',
-    href: '/admin/sistema',
-    icon: Settings,
-  },
-  {
     label: 'Log Accessi',
     href: '/admin/log-accessi',
     icon: FileText,
-  },
-  {
-    label: 'Impostazioni',
-    href: '/admin/impostazioni',
-    icon: SlidersHorizontal,
   },
 ]
 

@@ -136,9 +136,9 @@ export default function StaffPage() {
         throw error
       }
 
-      // Filtra solo gestori (tipo_ruolo = 'gestore')
+      // Filtra solo gestori (tipo_ruolo = 'gestore') escludendo educatori
       const staffData = (data || [])
-        .filter((u: any) => u.ruoli?.tipo_ruolo === 'gestore')
+        .filter((u: any) => u.ruoli?.tipo_ruolo === 'gestore' && u.ruoli?.codice !== 'educatore')
         .map((u: any) => ({
           ...u,
           ruolo: u.ruoli,
@@ -340,18 +340,25 @@ export default function StaffPage() {
     if (!staffToDelete) return
 
     try {
-      // Elimina da auth.users (cascata su profiles)
-      const { error } = await supabase.auth.admin.deleteUser(staffToDelete.id)
+      // Elimina fisicamente l'utente tramite API admin
+      const response = await fetch('/api/admin/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: staffToDelete.id })
+      })
 
-      if (error) throw error
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.error)
+      }
 
       setDeleteModalOpen(false)
       setStaffToDelete(null)
       dataCache.invalidate(CACHE_KEY)
       loadStaff(true)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Errore eliminazione staff:', err)
-      alert('Errore durante l\'eliminazione dello staff')
+      alert(`Errore durante l'eliminazione: ${err.message}`)
     }
   }
 

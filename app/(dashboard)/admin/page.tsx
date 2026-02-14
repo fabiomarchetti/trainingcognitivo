@@ -3,19 +3,79 @@
  */
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   Users,
-  UserCheck,
   GraduationCap,
   Heart,
   UserPlus,
   Settings,
   FileText,
-  RefreshCw
+  RefreshCw,
+  Shield,
+  Loader2
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+
+interface Stats {
+  staff: number
+  educatori: number
+  utenti: number
+  totale: number
+}
 
 export default function AdminPage() {
+  const [stats, setStats] = useState<Stats>({ staff: 0, educatori: 0, utenti: 0, totale: 0 })
+  const [isLoading, setIsLoading] = useState(true)
+
+  const loadStats = async () => {
+    setIsLoading(true)
+    try {
+      const supabase = createClient()
+
+      // Carica tutti i profili con i ruoli
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, stato, ruoli:id_ruolo(codice)')
+
+      if (profiles) {
+        // Filtra solo utenti attivi (non eliminati)
+        const activeProfiles = profiles.filter((p: any) => p.stato !== 'eliminato')
+
+        // Conta per tipo di ruolo
+        const staffCodes = ['sviluppatore', 'responsabile_centro', 'insegnante', 'visitatore']
+
+        const staffCount = activeProfiles.filter((p: any) =>
+          staffCodes.includes(p.ruoli?.codice)
+        ).length
+
+        const educatoriCount = activeProfiles.filter((p: any) =>
+          p.ruoli?.codice === 'educatore'
+        ).length
+
+        const utentiCount = activeProfiles.filter((p: any) =>
+          p.ruoli?.codice === 'utente'
+        ).length
+
+        setStats({
+          staff: staffCount,
+          educatori: educatoriCount,
+          utenti: utentiCount,
+          totale: activeProfiles.length
+        })
+      }
+    } catch (err) {
+      console.error('Errore caricamento statistiche:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadStats()
+  }, [])
+
   return (
     <div className="space-y-4">
       {/* Header con titolo */}
@@ -27,11 +87,19 @@ export default function AdminPage() {
               Pannello Amministrativo
             </h1>
             <p className="text-white/90 mt-1 font-semibold text-sm lg:text-base drop-shadow">
-              🌟 Gestione completa del sistema TrainingCognitivo
+              Gestione completa del sistema TrainingCognitivo
             </p>
           </div>
-          <button className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white text-green-600 rounded-xl font-bold hover:scale-105 transition-all shadow-lg">
-            <RefreshCw className="h-4 w-4" />
+          <button
+            onClick={() => loadStats()}
+            disabled={isLoading}
+            className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white text-green-600 rounded-xl font-bold hover:scale-105 transition-all shadow-lg disabled:opacity-50"
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
             Aggiorna
           </button>
         </div>
@@ -40,39 +108,42 @@ export default function AdminPage() {
       {/* Statistiche */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
-          label="Utenti Totali"
-          value="--"
-          icon={<Users className="h-6 w-6 text-red-500" />}
-          bgColor="bg-red-50"
-          borderColor="border-red-200"
-        />
-        <StatCard
-          label="Amministratori"
-          value="--"
-          icon={<UserCheck className="h-6 w-6 text-green-500" />}
-          bgColor="bg-green-50"
-          borderColor="border-green-200"
+          label="Staff"
+          value={isLoading ? '...' : stats.staff.toString()}
+          icon={<Shield className="h-6 w-6 text-purple-500" />}
+          bgColor="bg-purple-50"
+          borderColor="border-purple-200"
+          href="/admin/staff"
         />
         <StatCard
           label="Educatori"
-          value="--"
+          value={isLoading ? '...' : stats.educatori.toString()}
           icon={<GraduationCap className="h-6 w-6 text-blue-500" />}
           bgColor="bg-blue-50"
           borderColor="border-blue-200"
+          href="/admin/educatori"
         />
         <StatCard
           label="Utenti"
-          value="--"
+          value={isLoading ? '...' : stats.utenti.toString()}
           icon={<Heart className="h-6 w-6 text-emerald-500" />}
           bgColor="bg-emerald-50"
           borderColor="border-emerald-200"
+          href="/admin/utenti"
+        />
+        <StatCard
+          label="Totale"
+          value={isLoading ? '...' : stats.totale.toString()}
+          icon={<Users className="h-6 w-6 text-orange-500" />}
+          bgColor="bg-orange-50"
+          borderColor="border-orange-200"
         />
       </div>
 
       {/* Azioni Rapide */}
       <div className="bg-white rounded-2xl p-4 shadow-lg border-2 border-cyan-200">
         <h2 className="text-lg font-black text-gray-800 mb-3 flex items-center gap-2">
-          ⚡ Azioni Rapide
+          Azioni Rapide
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <ActionButton
@@ -151,22 +222,38 @@ function StatCard({
   icon,
   bgColor,
   borderColor,
+  href,
 }: {
   label: string
   value: string
   icon: React.ReactNode
   bgColor: string
   borderColor: string
+  href?: string
 }) {
-  return (
-    <div className={`${bgColor} ${borderColor} border-2 rounded-2xl p-3 lg:p-4 flex items-center justify-between shadow-md hover:shadow-lg transition-shadow`}>
-      <div>
-        <p className="text-xs lg:text-sm text-gray-600 font-medium">{label}</p>
-        <p className="text-xl lg:text-2xl font-bold text-gray-800 mt-0.5">{value}</p>
+  const content = (
+    <div className={`${bgColor} ${borderColor} border-2 rounded-2xl p-3 lg:p-4 shadow-md hover:shadow-lg transition-all ${href ? 'hover:scale-105 cursor-pointer' : ''}`}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs lg:text-sm text-gray-600 font-medium">{label}</p>
+          <p className="text-2xl lg:text-3xl font-black text-gray-800 mt-0.5">{value}</p>
+        </div>
+        <div className="shrink-0">
+          {icon}
+        </div>
       </div>
-      {icon}
     </div>
   )
+
+  if (href) {
+    return (
+      <Link href={href} prefetch={false}>
+        {content}
+      </Link>
+    )
+  }
+
+  return content
 }
 
 function ActionButton({

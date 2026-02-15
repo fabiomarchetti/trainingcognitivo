@@ -32,6 +32,34 @@ interface FormData {
   stato: 'attivo' | 'sospeso'
 }
 
+// Normalizza il nome: minuscolo, senza accenti, senza spazi
+function normalizzaNome(nome: string): string {
+  return nome
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Rimuove accenti
+    .replace(/\s+/g, '') // Rimuove spazi
+    .replace(/[^a-z0-9]/g, '') // Rimuove caratteri speciali
+}
+
+// Genera credenziali automatiche dal nome e cognome
+function generaCredenziali(nome: string, cognome: string): { email: string; password: string } {
+  const nomeNorm = normalizzaNome(nome || 'utente')
+  const cognomeNorm = normalizzaNome(cognome || '')
+
+  // Se nome e cognome sono uguali o cognome vuoto, usa solo nome
+  let baseNome = nomeNorm
+  if (cognomeNorm && cognomeNorm !== nomeNorm) {
+    baseNome = `${nomeNorm}.${cognomeNorm}`
+  }
+
+  return {
+    email: `${baseNome}@gmail.com`,
+    password: `${nomeNorm}pwd`
+  }
+}
+
 export function UtenteModal({
   isOpen,
   onClose,
@@ -153,22 +181,10 @@ export function UtenteModal({
       setError('Il cognome è obbligatorio')
       return
     }
-    if (!isEditMode) {
-      // Creazione: email e password obbligatorie
-      if (!formData.email.trim()) {
-        setError('L\'email è obbligatoria')
-        return
-      }
-      if (!formData.password || formData.password.length < 6) {
-        setError('La password deve essere di almeno 6 caratteri')
-        return
-      }
-    } else {
-      // Modifica: se password inserita, deve avere minimo 6 caratteri
-      if (formData.password && formData.password.length > 0 && formData.password.length < 6) {
-        setError('La password deve essere di almeno 6 caratteri')
-        return
-      }
+    // Modifica: se password inserita, deve avere minimo 6 caratteri
+    if (isEditMode && formData.password && formData.password.length > 0 && formData.password.length < 6) {
+      setError('La password deve essere di almeno 6 caratteri')
+      return
     }
 
     setIsSubmitting(true)
@@ -216,51 +232,37 @@ export function UtenteModal({
           }
         }
       } else {
-        // CREA nuovo utente
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: formData.email.trim(),
-          password: formData.password,
-          options: {
-            data: {
-              nome: formData.nome.trim(),
-              cognome: formData.cognome.trim(),
-              ruolo: 'utente'
-            }
-          }
-        })
+        // CREA nuovo utente con credenziali generate automaticamente
+        const credenziali = generaCredenziali(formData.nome, formData.cognome)
 
-        if (authError) {
-          if (authError.message.includes('already registered')) {
-            setError('Questa email è già registrata')
-          } else {
-            setError(authError.message)
-          }
-          return
-        }
-
-        if (!authData.user) {
-          setError('Errore durante la creazione dell\'utente')
-          return
-        }
-
-        // Aggiorna il profilo con i dati aggiuntivi
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
+        // Usa API Admin per creare utente (bypassa verifica email)
+        const response = await fetch('/api/admin/create-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: credenziali.email,
+            password: credenziali.password,
+            nome: formData.nome.trim(),
+            cognome: formData.cognome.trim(),
             id_ruolo: idRuoloUtente,
             id_sede: formData.id_sede,
             id_settore: formData.id_settore,
             id_classe: formData.id_classe,
             telefono: formData.telefono.trim() || null,
-            email_contatto: formData.email.trim(),
             note: formData.note.trim() || null,
             stato: formData.stato
           })
-          .eq('id', authData.user.id)
+        })
 
-        if (updateError) {
-          console.error('Errore update profilo:', updateError)
-          // Utente creato ma profilo non aggiornato completamente
+        const result = await response.json()
+
+        if (!result.success) {
+          if (result.message.includes('already been registered')) {
+            setError('Esiste già un utente con questo nome e cognome')
+          } else {
+            setError(result.message)
+          }
+          return
         }
       }
 
@@ -341,46 +343,66 @@ export function UtenteModal({
               </div>
             </div>
 
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">
-                Email {!isEditMode && '*'}
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-teal-500" />
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  disabled={isEditMode}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:ring-2 focus:ring-teal-200 font-medium disabled:bg-gray-100 disabled:text-gray-500"
-                  placeholder="email@esempio.it"
-                />
+            {/* Credenziali generate automaticamente (solo creazione) */}
+            {!isEditMode && formData.nome && formData.cognome && (
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                <p className="text-sm font-bold text-blue-700 mb-2 flex items-center gap-2">
+                  <Lock className="h-4 w-4" />
+                  Credenziali Login (generate automaticamente)
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs text-blue-600">Email</p>
+                    <p className="font-mono text-blue-800 font-bold">
+                      {generaCredenziali(formData.nome, formData.cognome).email}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-blue-600">Password</p>
+                    <p className="font-mono text-blue-800 font-bold">
+                      {generaCredenziali(formData.nome, formData.cognome).password}
+                    </p>
+                  </div>
+                </div>
               </div>
-              {isEditMode && (
-                <p className="text-xs text-gray-500 mt-1">L'email non può essere modificata</p>
-              )}
-            </div>
+            )}
 
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">
-                Password {!isEditMode && '*'}
-                <span className="font-normal text-gray-500">
-                  {isEditMode ? ' (lascia vuoto per non modificare)' : ' (min. 6 caratteri)'}
-                </span>
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-teal-500" />
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:ring-2 focus:ring-teal-200 font-medium"
-                  placeholder={isEditMode ? "Nuova password (opzionale)" : "Password"}
-                />
+            {/* Email (solo modifica - read only) */}
+            {isEditMode && (
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-teal-500" />
+                  <input
+                    type="email"
+                    value={formData.email}
+                    disabled
+                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl font-medium bg-gray-100 text-gray-500"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">L'email non può essere modificata</p>
               </div>
-            </div>
+            )}
+
+            {/* Password (solo modifica) */}
+            {isEditMode && (
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">
+                  Password
+                  <span className="font-normal text-gray-500"> (lascia vuoto per non modificare)</span>
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-teal-500" />
+                  <input
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-teal-400 focus:ring-2 focus:ring-teal-200 font-medium"
+                    placeholder="Nuova password (opzionale)"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Sede */}
             <div>

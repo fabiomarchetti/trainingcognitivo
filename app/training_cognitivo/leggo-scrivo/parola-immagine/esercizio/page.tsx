@@ -11,7 +11,8 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   Home, ArrowLeft, RotateCcw, Type, Play, SkipForward,
-  RefreshCw, X, Star, BarChart3, CheckCircle, XCircle, Loader2, Printer
+  RefreshCw, X, Star, BarChart3, CheckCircle, XCircle, Loader2, Printer,
+  Menu, Settings, Palette, ImageIcon, AlertCircle, LogIn, Download, Smartphone
 } from 'lucide-react'
 import jsPDF from 'jspdf'
 import { createClient } from '@/lib/supabase/client'
@@ -65,11 +66,75 @@ function EsercizioContent() {
   const [showPlaceholder, setShowPlaceholder] = useState(false)
   const [showExerciseArea, setShowExerciseArea] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [authError, setAuthError] = useState(false)
+
+  // PWA Install
+  const [isStandalone, setIsStandalone] = useState(false)
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+  const [isInstallable, setIsInstallable] = useState(false)
+  const [installBannerDismissed, setInstallBannerDismissed] = useState(false)
 
   // Feedback modals
   const [showCelebration, setShowCelebration] = useState(false)
   const [showError, setShowError] = useState(false)
   const [showSummary, setShowSummary] = useState(false)
+
+  // Menu impostazioni
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false)
+
+  // Preferenze visualizzazione
+  const [fontSize, setFontSize] = useState(36) // px
+  const [fontColor, setFontColor] = useState('#1f2937') // gray-800
+  const [fontBgColor, setFontBgColor] = useState('#ffffff') // white
+  const [imageSize, setImageSize] = useState(192) // px (h-48 = 12rem = 192px)
+  const [imageBgColor, setImageBgColor] = useState('#ffffff') // white
+
+  // Colori disponibili
+  const availableColors = [
+    { name: 'Bianco', value: '#ffffff' },
+    { name: 'Nero', value: '#000000' },
+    { name: 'Giallo', value: '#facc15' },
+    { name: 'Blu', value: '#3b82f6' },
+    { name: 'Rosso', value: '#ef4444' },
+    { name: 'Verde', value: '#22c55e' }
+  ]
+
+  // Funzioni per gestione localStorage preferenze
+  const getStorageKey = (userId: string) => `training_visual_prefs_${userId}`
+
+  const loadPreferences = (userId: string) => {
+    if (typeof window === 'undefined' || !userId) return
+    try {
+      const saved = localStorage.getItem(getStorageKey(userId))
+      if (saved) {
+        const prefs = JSON.parse(saved)
+        if (prefs.fontSize) setFontSize(prefs.fontSize)
+        if (prefs.fontColor) setFontColor(prefs.fontColor)
+        if (prefs.fontBgColor) setFontBgColor(prefs.fontBgColor)
+        if (prefs.imageSize) setImageSize(prefs.imageSize)
+        if (prefs.imageBgColor) setImageBgColor(prefs.imageBgColor)
+      }
+    } catch (e) {
+      console.error('Errore caricamento preferenze:', e)
+    }
+  }
+
+  const savePreferences = (userId: string) => {
+    if (typeof window === 'undefined' || !userId) return
+    try {
+      const prefs = { fontSize, fontColor, fontBgColor, imageSize, imageBgColor }
+      localStorage.setItem(getStorageKey(userId), JSON.stringify(prefs))
+    } catch (e) {
+      console.error('Errore salvataggio preferenze:', e)
+    }
+  }
+
+  // Salva preferenze quando cambiano
+  useEffect(() => {
+    if (selectedUserId) {
+      savePreferences(selectedUserId)
+    }
+  }, [fontSize, fontColor, fontBgColor, imageSize, imageBgColor, selectedUserId])
 
   // Feedback visivo immagini
   const [topImageClass, setTopImageClass] = useState('')
@@ -102,6 +167,46 @@ function EsercizioContent() {
     loadCurrentUser()
   }, [])
 
+  // PWA Install prompt
+  useEffect(() => {
+    // Check se già in modalità standalone
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsStandalone(true)
+    }
+
+    // Check se banner già dismesso
+    if (localStorage.getItem('exerciseInstallBannerDismissed') === 'true') {
+      setInstallBannerDismissed(true)
+    }
+
+    const handler = (e: Event) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+      setIsInstallable(true)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  // Installa PWA
+  const handleInstallPWA = async () => {
+    if (!deferredPrompt) return
+    deferredPrompt.prompt()
+    const { outcome } = await deferredPrompt.userChoice
+    if (outcome === 'accepted') {
+      setIsInstallable(false)
+    }
+    setDeferredPrompt(null)
+  }
+
+  // Chiudi banner installazione
+  const dismissInstallBanner = () => {
+    setInstallBannerDismissed(true)
+    localStorage.setItem('exerciseInstallBannerDismissed', 'true')
+  }
+
+  const showInstallBanner = isInstallable && !installBannerDismissed && !isStandalone && selectedUserId
+
   const speakWord = (text: string) => {
     if (!synthRef.current) return
     synthRef.current.cancel()
@@ -118,8 +223,12 @@ function EsercizioContent() {
   }
 
   const loadCurrentUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    const { data: { user }, error } = await supabase.auth.getUser()
+    if (!user || error) {
+      console.log('[Auth] Utente non autenticato:', error?.message)
+      setAuthError(true)
+      return
+    }
 
     // Se c'è un utente passato come parametro, carica direttamente quello
     if (utenteParam) {
@@ -197,6 +306,9 @@ function EsercizioContent() {
 
   const loadDataForUser = async (userId: string) => {
     setLoading(true)
+
+    // Carica preferenze visualizzazione dal localStorage
+    loadPreferences(userId)
 
     // Carica impostazioni
     try {
@@ -602,21 +714,52 @@ function EsercizioContent() {
             Parola → Immagine
           </h1>
 
-          <button
-            onClick={handleReset}
-            className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
-            title="Cancella cache e ricarica"
-          >
-            <RotateCcw className="h-5 w-5 text-white" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowSettingsMenu(true)}
+              className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+              title="Impostazioni visualizzazione"
+            >
+              <Menu className="h-5 w-5 text-white" />
+            </button>
+            <button
+              onClick={handleReset}
+              className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+              title="Cancella cache e ricarica"
+            >
+              <RotateCcw className="h-5 w-5 text-white" />
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-5xl mx-auto p-6">
 
+        {/* Errore Autenticazione */}
+        {authError && (
+          <section className="bg-white rounded-2xl shadow-lg p-6 max-w-md mx-auto text-center">
+            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="h-8 w-8 text-orange-500" />
+            </div>
+            <h2 className="text-lg font-bold text-gray-800 mb-2">
+              Sessione scaduta
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Per utilizzare l'esercizio devi effettuare il login.
+            </p>
+            <a
+              href="/login"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 text-white font-bold rounded-lg hover:bg-orange-600 transition-colors"
+            >
+              <LogIn className="h-5 w-5" />
+              Vai al Login
+            </a>
+          </section>
+        )}
+
         {/* Selezione Utente */}
-        {showUserSelection && (
+        {showUserSelection && !authError && (
           <section className="bg-white rounded-2xl shadow-lg p-6 max-w-md mx-auto">
             <h2 className="text-lg font-bold text-orange-700 mb-4 flex items-center gap-2">
               Seleziona il tuo profilo
@@ -639,6 +782,39 @@ function EsercizioContent() {
               </div>
             )}
           </section>
+        )}
+
+        {/* Banner Installazione PWA */}
+        {showInstallBanner && (
+          <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-2xl p-4 mb-6 shadow-lg max-w-2xl mx-auto">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                  <Smartphone className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <p className="font-bold text-white">Installa l'app sul tuo dispositivo</p>
+                  <p className="text-orange-100 text-sm">Accesso rapido senza aprire il browser</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleInstallPWA}
+                  className="px-4 py-2 bg-white text-orange-600 font-bold rounded-lg hover:bg-orange-50 transition-colors flex items-center gap-2"
+                >
+                  <Download className="h-5 w-5" />
+                  Installa
+                </button>
+                <button
+                  onClick={dismissInstallBanner}
+                  className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+                  title="Chiudi"
+                >
+                  <X className="h-5 w-5 text-white" />
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Toolbar */}
@@ -716,8 +892,14 @@ function EsercizioContent() {
         {showExerciseArea && currentPair && (
           <div className="grid grid-cols-2 gap-8">
             {/* Colonna Parola */}
-            <div className="bg-white rounded-2xl shadow-lg p-8 flex items-center justify-center">
-              <span className="text-4xl font-bold text-gray-800 uppercase tracking-wide">
+            <div
+              className="rounded-2xl shadow-lg p-8 flex items-center justify-center"
+              style={{ backgroundColor: fontBgColor }}
+            >
+              <span
+                className="font-bold uppercase tracking-wide"
+                style={{ fontSize: `${fontSize}px`, color: fontColor }}
+              >
                 {currentPair.parola_target}
               </span>
             </div>
@@ -727,30 +909,217 @@ function EsercizioContent() {
               {/* Immagine Top */}
               <div
                 onClick={() => selectImage('top')}
-                className={`bg-white rounded-2xl shadow-lg p-6 cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 ${topImageClass}`}
+                className={`rounded-2xl shadow-lg p-6 cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 ${topImageClass}`}
+                style={{ backgroundColor: imageBgColor }}
               >
                 <img
                   src={targetPosition === 'top' ? currentPair.url_immagine_target : currentPair.url_immagine_distrattore}
                   alt="Immagine sopra"
-                  className="w-full h-48 object-contain"
+                  className="w-full object-contain"
+                  style={{ height: `${imageSize}px` }}
                 />
               </div>
 
               {/* Immagine Bottom */}
               <div
                 onClick={() => selectImage('bottom')}
-                className={`bg-white rounded-2xl shadow-lg p-6 cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 ${bottomImageClass}`}
+                className={`rounded-2xl shadow-lg p-6 cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 ${bottomImageClass}`}
+                style={{ backgroundColor: imageBgColor }}
               >
                 <img
                   src={targetPosition === 'bottom' ? currentPair.url_immagine_target : currentPair.url_immagine_distrattore}
                   alt="Immagine sotto"
-                  className="w-full h-48 object-contain"
+                  className="w-full object-contain"
+                  style={{ height: `${imageSize}px` }}
                 />
               </div>
             </div>
           </div>
         )}
       </main>
+
+      {/* Menu Impostazioni */}
+      {showSettingsMenu && (
+        <>
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 bg-black/30 z-40"
+            onClick={() => setShowSettingsMenu(false)}
+          />
+
+          {/* Menu laterale */}
+          <div className="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 overflow-y-auto">
+            {/* Header menu */}
+            <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Impostazioni
+              </h3>
+              <button
+                onClick={() => setShowSettingsMenu(false)}
+                className="p-1 bg-white/20 rounded-full hover:bg-white/30"
+              >
+                <X className="h-5 w-5 text-white" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-6">
+              {/* Sezione Font */}
+              <div className="space-y-4">
+                <h4 className="font-bold text-gray-700 flex items-center gap-2 border-b pb-2">
+                  <Type className="h-5 w-5 text-orange-500" />
+                  Testo Parola
+                </h4>
+
+                {/* Dimensione font */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
+                    Dimensione: {fontSize}px
+                  </label>
+                  <input
+                    type="range"
+                    min="24"
+                    max="72"
+                    value={fontSize}
+                    onChange={(e) => setFontSize(Number(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>Piccolo</span>
+                    <span>Grande</span>
+                  </div>
+                </div>
+
+                {/* Colore font */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
+                    Colore testo
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {availableColors.map((color) => (
+                      <button
+                        key={`font-${color.value}`}
+                        onClick={() => setFontColor(color.value)}
+                        className={`w-10 h-10 rounded-lg border-2 transition-all ${
+                          fontColor === color.value ? 'ring-2 ring-orange-500 ring-offset-2' : 'border-gray-300'
+                        }`}
+                        style={{ backgroundColor: color.value }}
+                        title={color.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Sfondo box parola */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
+                    Sfondo box parola
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {availableColors.map((color) => (
+                      <button
+                        key={`fontbg-${color.value}`}
+                        onClick={() => setFontBgColor(color.value)}
+                        className={`w-10 h-10 rounded-lg border-2 transition-all ${
+                          fontBgColor === color.value ? 'ring-2 ring-orange-500 ring-offset-2' : 'border-gray-300'
+                        }`}
+                        style={{ backgroundColor: color.value }}
+                        title={color.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Sezione Immagini */}
+              <div className="space-y-4">
+                <h4 className="font-bold text-gray-700 flex items-center gap-2 border-b pb-2">
+                  <ImageIcon className="h-5 w-5 text-orange-500" />
+                  Immagini
+                </h4>
+
+                {/* Dimensione immagine */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
+                    Dimensione: {imageSize}px
+                  </label>
+                  <input
+                    type="range"
+                    min="120"
+                    max="320"
+                    step="20"
+                    value={imageSize}
+                    onChange={(e) => setImageSize(Number(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>Piccola</span>
+                    <span>Grande</span>
+                  </div>
+                </div>
+
+                {/* Sfondo box immagini */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
+                    Sfondo box immagini
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {availableColors.map((color) => (
+                      <button
+                        key={`imgbg-${color.value}`}
+                        onClick={() => setImageBgColor(color.value)}
+                        className={`w-10 h-10 rounded-lg border-2 transition-all ${
+                          imageBgColor === color.value ? 'ring-2 ring-orange-500 ring-offset-2' : 'border-gray-300'
+                        }`}
+                        style={{ backgroundColor: color.value }}
+                        title={color.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Anteprima */}
+              <div className="space-y-2 pt-4 border-t">
+                <h4 className="font-bold text-gray-700 text-sm">Anteprima</h4>
+                <div className="flex gap-2">
+                  <div
+                    className="flex-1 rounded-lg p-3 flex items-center justify-center"
+                    style={{ backgroundColor: fontBgColor }}
+                  >
+                    <span
+                      className="font-bold"
+                      style={{ fontSize: `${Math.min(fontSize, 24)}px`, color: fontColor }}
+                    >
+                      PAROLA
+                    </span>
+                  </div>
+                  <div
+                    className="flex-1 rounded-lg p-3 flex items-center justify-center"
+                    style={{ backgroundColor: imageBgColor }}
+                  >
+                    <ImageIcon className="h-8 w-8 text-gray-400" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Reset */}
+              <button
+                onClick={() => {
+                  setFontSize(36)
+                  setFontColor('#1f2937')
+                  setFontBgColor('#ffffff')
+                  setImageSize(192)
+                  setImageBgColor('#ffffff')
+                }}
+                className="w-full py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Ripristina impostazioni
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Modal Celebrazione */}
       {showCelebration && (

@@ -13,7 +13,7 @@ import Link from 'next/link'
 import {
   Home, Download, RotateCcw, Settings,
   BookOpen, Image, Type, ChevronRight, Info,
-  CheckCircle, Eye, Hand, Volume2
+  CheckCircle, Eye, Hand, Volume2, BarChart3, TrendingUp, Clock
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -160,8 +160,8 @@ export default function ParolaImmagineHomePage() {
           <p className="text-gray-600 text-lg">Seleziona l'area in cui vuoi entrare</p>
         </div>
 
-        {/* Cards Grid - 3 colonne */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        {/* Cards Grid - 4 colonne */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
 
           {/* Card 1: Area Educatore */}
           <Link
@@ -261,6 +261,38 @@ export default function ParolaImmagineHomePage() {
               </ul>
               <div className="mt-4 flex justify-end">
                 <ChevronRight className="h-8 w-8 text-purple-300 group-hover:text-purple-500 group-hover:translate-x-1 transition-all" />
+              </div>
+            </div>
+          </Link>
+
+          {/* Card 4: Statistiche */}
+          <Link
+            href="/training_cognitivo/leggo-scrivo/parola-immagine/statistiche"
+            className="group bg-white rounded-2xl shadow-lg overflow-hidden border-4 border-transparent hover:border-indigo-400 hover:shadow-xl transition-all hover:-translate-y-2"
+          >
+            <div className="h-2 bg-gradient-to-r from-indigo-500 to-violet-500" />
+            <div className="p-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-full flex items-center justify-center mb-4">
+                <BarChart3 className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-indigo-700 mb-2">Statistiche</h3>
+              <p className="text-gray-600 text-sm mb-4">Visualizza i risultati e l'andamento</p>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2 text-gray-700">
+                  <TrendingUp className="h-4 w-4 text-indigo-500" />
+                  Andamento sessioni
+                </li>
+                <li className="flex items-center gap-2 text-gray-700">
+                  <Clock className="h-4 w-4 text-indigo-500" />
+                  Tempi di risposta
+                </li>
+                <li className="flex items-center gap-2 text-gray-700">
+                  <BarChart3 className="h-4 w-4 text-indigo-500" />
+                  Grafici dettagliati
+                </li>
+              </ul>
+              <div className="mt-4 flex justify-end">
+                <ChevronRight className="h-8 w-8 text-indigo-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
               </div>
             </div>
           </Link>

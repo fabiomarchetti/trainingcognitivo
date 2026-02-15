@@ -22,6 +22,7 @@ interface Esercizio {
   nome: string
   slug: string
   percorso_app: string | null
+  categoria_slug?: string
   categoria_nome?: string
 }
 
@@ -56,19 +57,29 @@ export default function GeneraIconePage() {
           nome,
           slug,
           percorso_app,
-          categorie_esercizi (nome)
+          categorie_esercizi (nome, slug)
         `)
         .order('nome')
 
       if (error) throw error
 
-      const mapped = (data || []).map((e: any) => ({
-        id: e.id,
-        nome: e.nome,
-        slug: e.slug,
-        percorso_app: e.percorso_app,
-        categoria_nome: e.categorie_esercizi?.nome || 'Senza categoria'
-      }))
+      const mapped = (data || []).map((e: any) => {
+        const categoriaSlug = e.categorie_esercizi?.slug
+        // Calcola percorso automaticamente se non configurato
+        const percorsoCalcolato = categoriaSlug && e.slug
+          ? `app/training_cognitivo/${categoriaSlug}/${e.slug}`
+          : null
+
+        return {
+          id: e.id,
+          nome: e.nome,
+          slug: e.slug,
+          // Usa percorso_app dal DB se presente, altrimenti calcola automaticamente
+          percorso_app: e.percorso_app || percorsoCalcolato,
+          categoria_slug: categoriaSlug,
+          categoria_nome: e.categorie_esercizi?.nome || 'Senza categoria'
+        }
+      })
 
       setEsercizi(mapped)
     } catch (error) {

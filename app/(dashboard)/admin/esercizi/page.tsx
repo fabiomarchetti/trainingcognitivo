@@ -82,12 +82,14 @@ export default function EserciziPage() {
 
   // Carica esercizi
   const loadEsercizi = async (forceReload = false) => {
-    if (isLoadingRef.current) {
-      return
-    }
-
+    // Segna che abbiamo tentato il caricamento (previene loop)
     if (!forceReload) {
       hasLoadedRef.current = true
+    }
+
+    if (isLoadingRef.current) {
+      console.log('[ESERCIZI] Caricamento già in corso, skip')
+      return
     }
 
     // Controlla cache
@@ -137,8 +139,7 @@ export default function EserciziPage() {
   }
 
   useEffect(() => {
-    if (hasLoadedRef.current) return
-    if (!canAccess) return
+    if (hasLoadedRef.current || !canAccess) return
     loadEsercizi()
     loadCategorie()
     // eslint-disable-next-line react-hooks/exhaustive-deps

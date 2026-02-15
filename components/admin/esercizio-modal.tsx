@@ -49,25 +49,34 @@ export function EsercizioModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Ref per tracciare l'ultimo esercizio caricato (evita loop)
-  const lastLoadedEsercizioId = useRef<number | null>(null)
-  const wasOpen = useRef(false)
+  // Ref per tracciare se il form è già stato inizializzato per questa apertura
+  const hasInitializedRef = useRef(false)
+  const wasOpenRef = useRef(false)
+  // Ref per prevenire submit multipli (più robusto di useState)
+  const isSubmittingRef = useRef(false)
 
   // Popola form - solo quando il modal si apre o cambia esercizio
   useEffect(() => {
-    const justOpened = isOpen && !wasOpen.current
-    wasOpen.current = isOpen
+    // Rileva se il modal si è appena aperto
+    const justOpened = isOpen && !wasOpenRef.current
+    wasOpenRef.current = isOpen
 
+    // Reset completo quando si chiude
     if (!isOpen) {
-      lastLoadedEsercizioId.current = null
+      hasInitializedRef.current = false
+      isSubmittingRef.current = false
+      setIsSubmitting(false)
+      setError(null)
       return
     }
 
-    if (esercizio?.id === lastLoadedEsercizioId.current && !justOpened) {
+    // Se già inizializzato per questa apertura, skip
+    if (hasInitializedRef.current && !justOpened) {
       return
     }
 
-    lastLoadedEsercizioId.current = esercizio?.id || null
+    // Segna come inizializzato PRIMA di fare qualsiasi setState
+    hasInitializedRef.current = true
 
     if (esercizio) {
       setFormData({
@@ -113,6 +122,12 @@ export function EsercizioModal({
   }
 
   const handleSubmit = async () => {
+    // Prevenzione submit multipli (usa ref per robustezza)
+    if (isSubmittingRef.current) {
+      console.log('[ESERCIZIO-MODAL] Submit già in corso, skip')
+      return
+    }
+
     setError(null)
 
     // Validazione
@@ -129,6 +144,8 @@ export function EsercizioModal({
       return
     }
 
+    // Segna come in submit PRIMA di qualsiasi async
+    isSubmittingRef.current = true
     setIsSubmitting(true)
 
     try {
@@ -153,6 +170,7 @@ export function EsercizioModal({
           } else {
             setError(`Errore: ${updateError.message}`)
           }
+          isSubmittingRef.current = false
           setIsSubmitting(false)
           return
         }
@@ -175,6 +193,7 @@ export function EsercizioModal({
           } else {
             setError(`Errore: ${insertError.message}`)
           }
+          isSubmittingRef.current = false
           setIsSubmitting(false)
           return
         }
@@ -207,12 +226,14 @@ export function EsercizioModal({
         }
       }
 
+      isSubmittingRef.current = false
       setIsSubmitting(false)
       onClose()
       onSuccess()
     } catch (err: any) {
       console.error('Errore submit:', err)
       setError(err?.message || 'Errore durante il salvataggio')
+      isSubmittingRef.current = false
       setIsSubmitting(false)
     }
   }

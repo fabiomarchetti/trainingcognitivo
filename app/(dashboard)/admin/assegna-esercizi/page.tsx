@@ -136,7 +136,7 @@ export default function AssegnaEserciziPage() {
         id: e.id,
         nome: e.nome,
         slug: e.slug,
-        categoria: e.categoria as CategoriaEsercizi | null
+        categoria: (Array.isArray(e.categoria) ? e.categoria[0] : e.categoria) as CategoriaEsercizi | null
       })) || [])
 
       // Carica assegnazioni attive
@@ -517,7 +517,6 @@ export default function AssegnaEserciziPage() {
         title="Rimuovi Assegnazione"
         message={`Vuoi rimuovere l'assegnazione dell'esercizio "${assegnazioneToDelete?.esercizio?.nome}" all'utente "${assegnazioneToDelete?.utente?.nome} ${assegnazioneToDelete?.utente?.cognome}"?`}
         confirmText="Rimuovi"
-        confirmVariant="destructive"
       />
     </div>
   )

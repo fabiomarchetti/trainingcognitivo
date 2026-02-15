@@ -107,7 +107,25 @@ export default function TrainingPage() {
 
       if (assegnazioniError) throw assegnazioniError
 
-      setEsercizi(assegnazioni || [])
+      // Normalizza i dati - Supabase restituisce relazioni come array
+      const normalizedData = (assegnazioni || []).map((item: any) => ({
+        id: item.id,
+        id_esercizio: item.id_esercizio,
+        esercizio: Array.isArray(item.esercizio) ? item.esercizio[0] : item.esercizio
+      })).filter((item: any) => item.esercizio) // Filtra quelli senza esercizio
+
+      // Normalizza anche la categoria dentro l'esercizio
+      const finalData = normalizedData.map((item: any) => ({
+        ...item,
+        esercizio: item.esercizio ? {
+          ...item.esercizio,
+          categoria: Array.isArray(item.esercizio.categoria)
+            ? item.esercizio.categoria[0]
+            : item.esercizio.categoria
+        } : null
+      }))
+
+      setEsercizi(finalData)
 
     } catch (err: any) {
       console.error('[TRAINING] Errore:', err)

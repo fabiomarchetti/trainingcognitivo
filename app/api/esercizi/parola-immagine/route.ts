@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         // Statistiche generali
         const totale = risultati?.length || 0
         const corretti = risultati?.filter((r: any) => r.esito === 'corretto').length || 0
-        const sessioni = new Set(risultati?.map((r: any) => r.id_sessione)).size
+        const sessioni = new Set(risultati?.map((r: any) => r.progressivo_esercizio || r.id_sessione)).size
 
         return jsonResponse(true, 'Statistiche recuperate', {
           per_parola: perParola,
@@ -92,6 +92,28 @@ export async function GET(request: NextRequest) {
             percentuale: totale > 0 ? Math.round((corretti / totale) * 100) : 0
           }
         })
+      }
+
+      case 'get_next_progressivo': {
+        // Ottieni il tipo esercizio dal parametro
+        const tipo_esercizio = searchParams.get('tipo_esercizio') || 'parola-immagine'
+
+        // Ottieni il prossimo numero di sessione per l'utente E per tipo esercizio
+        const { data, error } = await supabase
+          .from('parola_immagine_risultati')
+          .select('progressivo_esercizio')
+          .eq('id_utente', id_utente)
+          .eq('tipo_esercizio', tipo_esercizio)
+          .order('progressivo_esercizio', { ascending: false })
+          .limit(1)
+
+        if (error) throw error
+
+        const nextProgressivo = (data && data.length > 0 && data[0].progressivo_esercizio)
+          ? data[0].progressivo_esercizio + 1
+          : 1
+
+        return jsonResponse(true, 'Progressivo calcolato', { progressivo: nextProgressivo, tipo_esercizio })
       }
 
       default:
@@ -115,8 +137,15 @@ export async function POST(request: NextRequest) {
         const {
           id_utente, id_coppia, parola_target, esito,
           tempo_risposta_ms, posizione_target, immagine_cliccata,
-          id_sessione, numero_prova, numero_prove_totali
+          id_sessione, numero_prova, numero_prove_totali,
+          // Nuovi campi
+          progressivo_esercizio, tipo_esercizio,
+          parola_distrattore, url_immagine_target, url_immagine_distrattore
         } = body
+
+        const now = new Date()
+        const data_esercizio = now.toISOString().split('T')[0]
+        const ora_esercizio = now.toTimeString().split(' ')[0]
 
         const { error } = await supabase
           .from('parola_immagine_risultati')
@@ -130,7 +159,15 @@ export async function POST(request: NextRequest) {
             immagine_cliccata,
             id_sessione,
             numero_prova,
-            numero_prove_totali
+            numero_prove_totali,
+            // Nuovi campi
+            progressivo_esercizio,
+            tipo_esercizio: tipo_esercizio || 'parola-immagine',
+            parola_distrattore,
+            url_immagine_target,
+            url_immagine_distrattore,
+            data_esercizio,
+            ora_esercizio
           })
 
         if (error) throw error

@@ -142,46 +142,31 @@ export default function GestionePage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // Sviluppatore e responsabile vedono tutti gli utenti
-    if (ruoloCodice === 'sviluppatore' || ruoloCodice === 'responsabile_centro') {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, nome, cognome')
-        .order('cognome')
+    // Prima ottieni l'ID del ruolo "utente"
+    const { data: ruoloUtente } = await supabase
+      .from('ruoli')
+      .select('id')
+      .eq('codice', 'utente')
+      .single()
 
-      if (profiles) {
-        setUtenti(profiles.map(p => ({
-          id: p.id,
-          nome: p.nome || '',
-          cognome: p.cognome || ''
-        })))
-      }
+    if (!ruoloUtente) {
+      console.error('Ruolo utente non trovato')
       return
     }
 
-    // Educatore: carica solo utenti assegnati
-    const { data: associazioni } = await supabase
-      .from('educatori_utenti')
-      .select('id_utente')
-      .eq('id_educatore', user.id)
-      .eq('is_attiva', true)
+    // Carica solo profili con ruolo "utente"
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, nome, cognome')
+      .eq('id_ruolo', ruoloUtente.id)
+      .order('cognome')
 
-    if (associazioni && associazioni.length > 0) {
-      const userIds = associazioni.map(a => a.id_utente)
-
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, nome, cognome')
-        .in('id', userIds)
-        .order('cognome')
-
-      if (profiles) {
-        setUtenti(profiles.map(p => ({
-          id: p.id,
-          nome: p.nome || '',
-          cognome: p.cognome || ''
-        })))
-      }
+    if (profiles) {
+      setUtenti(profiles.map(p => ({
+        id: p.id,
+        nome: p.nome || '',
+        cognome: p.cognome || ''
+      })))
     }
   }
 

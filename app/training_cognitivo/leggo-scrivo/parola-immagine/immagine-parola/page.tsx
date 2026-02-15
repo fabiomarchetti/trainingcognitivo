@@ -11,8 +11,9 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   Home, ArrowLeft, RotateCcw, Image as ImageIcon, Play, SkipForward,
-  RefreshCw, X, Star, BarChart3, CheckCircle, XCircle, Loader2
+  RefreshCw, X, Star, BarChart3, CheckCircle, XCircle, Loader2, Printer
 } from 'lucide-react'
+import jsPDF from 'jspdf'
 import { createClient } from '@/lib/supabase/client'
 import type { Coppia, Risultato } from '../types'
 
@@ -55,6 +56,7 @@ function ImmagineParolaContent() {
   const [currentTrial, setCurrentTrial] = useState(0)
   const [results, setResults] = useState<Risultato[]>([])
   const [sessionId, setSessionId] = useState('')
+  const [progressivoEsercizio, setProgressivoEsercizio] = useState<number>(1)
 
   // UI State
   const [isStarted, setIsStarted] = useState(false)
@@ -163,46 +165,33 @@ function ImmagineParolaContent() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // Sviluppatore e responsabile vedono tutti gli utenti
-    if (ruoloCodice === 'sviluppatore' || ruoloCodice === 'responsabile_centro') {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, nome, cognome')
-        .order('cognome')
+    // Carica solo utenti che hanno coppie create (con stato attivo)
+    const { data: coppieUtenti } = await supabase
+      .from('parola_immagine_coppie')
+      .select('id_utente')
+      .eq('stato', 'attiva')
 
-      if (profiles) {
-        setUtenti(profiles.map(p => ({
-          id: p.id,
-          nome: p.nome || '',
-          cognome: p.cognome || ''
-        })))
-      }
+    if (!coppieUtenti || coppieUtenti.length === 0) {
+      setUtenti([])
       return
     }
 
-    // Educatore: solo utenti assegnati
-    const { data: associazioni } = await supabase
-      .from('educatori_utenti')
-      .select('id_utente')
-      .eq('id_educatore', user.id)
-      .eq('is_attiva', true)
+    // Estrai ID univoci degli utenti con coppie
+    const userIdsConCoppie = [...new Set(coppieUtenti.map(c => c.id_utente))]
 
-    if (associazioni && associazioni.length > 0) {
-      const userIds = associazioni.map(a => a.id_utente)
+    // Carica profili solo per utenti con coppie
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, nome, cognome')
+      .in('id', userIdsConCoppie)
+      .order('cognome')
 
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, nome, cognome')
-        .in('id', userIds)
-        .order('cognome')
-
-      if (profiles) {
-        setUtenti(profiles.map(p => ({
-          id: p.id,
-          nome: p.nome || '',
-          cognome: p.cognome || ''
-        })))
-      }
+    if (profiles) {
+      setUtenti(profiles.map(p => ({
+        id: p.id,
+        nome: p.nome || '',
+        cognome: p.cognome || ''
+      })))
     }
   }
 
@@ -246,7 +235,18 @@ function ImmagineParolaContent() {
     await loadDataForUser(userId)
   }
 
-  const startExercise = () => {
+  const startExercise = async () => {
+    // Ottieni il prossimo progressivo dal server (separato per tipo esercizio)
+    try {
+      const res = await fetch(`/api/esercizi/parola-immagine?action=get_next_progressivo&id_utente=${selectedUserId}&tipo_esercizio=immagine-parola`)
+      const data = await res.json()
+      if (data.success) {
+        setProgressivoEsercizio(data.data.progressivo)
+      }
+    } catch (error) {
+      console.error('Errore ottenimento progressivo:', error)
+    }
+
     setIsStarted(true)
     setCurrentTrial(0)
     setResults([])
@@ -372,7 +372,13 @@ function ImmagineParolaContent() {
           immagine_cliccata: result.immagine_cliccata,
           id_sessione: sessionId,
           numero_prova: currentTrial,
-          numero_prove_totali: totalTrials
+          numero_prove_totali: totalTrials,
+          // Nuovi campi
+          progressivo_esercizio: progressivoEsercizio,
+          tipo_esercizio: 'immagine-parola',
+          parola_distrattore: currentPair.parola_distrattore,
+          url_immagine_target: currentPair.url_immagine_target,
+          url_immagine_distrattore: currentPair.url_immagine_distrattore
         })
       })
     } catch (error) {
@@ -423,6 +429,105 @@ function ImmagineParolaContent() {
     localStorage.clear()
     sessionStorage.clear()
     window.location.href = '/'
+  }
+
+  // Genera PDF con risultati
+  const generatePDF = () => {
+    if (results.length === 0) {
+      alert('Nessun risultato da stampare')
+      return
+    }
+
+    const doc = new jsPDF()
+    const now = new Date()
+    const dataStr = now.toLocaleDateString('it-IT')
+    const oraStr = now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+
+    const corretti = results.filter(r => r.esito === 'corretto')
+    const errati = results.filter(r => r.esito === 'errato')
+    const percCorretti = Math.round((corretti.length / results.length) * 100)
+    const percErrati = Math.round((errati.length / results.length) * 100)
+
+    // Intestazione
+    doc.setFontSize(18)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Esercizio Immagine - Parola', 105, 20, { align: 'center' })
+
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Utente: ${selectedUserName}`, 20, 35)
+    doc.text(`Data: ${dataStr}`, 20, 43)
+    doc.text(`Ora: ${oraStr}`, 20, 51)
+    doc.text(`Sessione: ${progressivoEsercizio}`, 20, 59)
+
+    // Risultati
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Risultati', 20, 75)
+
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(0, 128, 0) // Verde
+    doc.text(`Risposte corrette: ${corretti.length} (${percCorretti}%)`, 20, 85)
+    doc.setTextColor(255, 0, 0) // Rosso
+    doc.text(`Risposte errate: ${errati.length} (${percErrati}%)`, 20, 93)
+    doc.setTextColor(0, 0, 0) // Nero
+
+    let yPos = 110
+
+    // Dettaglio risposte corrette
+    if (corretti.length > 0) {
+      doc.setFontSize(12)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(0, 128, 0)
+      doc.text('Risposte Corrette:', 20, yPos)
+      doc.setTextColor(0, 0, 0)
+      doc.setFont('helvetica', 'normal')
+      yPos += 8
+
+      corretti.forEach((r, i) => {
+        if (yPos > 270) {
+          doc.addPage()
+          yPos = 20
+        }
+        doc.text(`${i + 1}. Immagine: "${r.parola}" - Parola scelta: corretta`, 25, yPos)
+        yPos += 7
+      })
+    }
+
+    yPos += 5
+
+    // Dettaglio risposte errate
+    if (errati.length > 0) {
+      if (yPos > 250) {
+        doc.addPage()
+        yPos = 20
+      }
+      doc.setFontSize(12)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(255, 0, 0)
+      doc.text('Risposte Errate:', 20, yPos)
+      doc.setTextColor(0, 0, 0)
+      doc.setFont('helvetica', 'normal')
+      yPos += 8
+
+      errati.forEach((r, i) => {
+        if (yPos > 270) {
+          doc.addPage()
+          yPos = 20
+        }
+        doc.text(`${i + 1}. Immagine: "${r.parola}" - Parola scelta: errata (scelta distrattore)`, 25, yPos)
+        yPos += 7
+      })
+    }
+
+    // Footer
+    doc.setFontSize(8)
+    doc.setTextColor(128, 128, 128)
+    doc.text('TrainingCognitivo - Esercizio Immagine-Parola', 105, 290, { align: 'center' })
+
+    // Salva PDF
+    doc.save(`immagine-parola_${selectedUserName.replace(/\s+/g, '_')}_${dataStr.replace(/\//g, '-')}.pdf`)
   }
 
   // Calcola statistiche per riepilogo
@@ -518,8 +623,27 @@ function ImmagineParolaContent() {
         {/* Toolbar */}
         {(showPlaceholder || showExerciseArea) && (
           <div className="flex items-center justify-between bg-white rounded-full shadow-lg px-6 py-3 mb-6">
-            <div className="text-gray-600">
-              Prova <span className="font-bold text-purple-600">{currentTrial}</span> / {totalTrials}
+            <div className="flex items-center gap-4">
+              <span className="text-gray-600">
+                Prova <span className="font-bold text-purple-600">{currentTrial}</span> / {totalTrials}
+              </span>
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1 text-green-600 font-bold">
+                  <CheckCircle className="h-5 w-5" />
+                  {results.filter(r => r.esito === 'corretto').length}
+                </span>
+                <span className="flex items-center gap-1 text-red-600 font-bold">
+                  <XCircle className="h-5 w-5" />
+                  {results.filter(r => r.esito === 'errato').length}
+                </span>
+                <button
+                  onClick={generatePDF}
+                  className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors ml-2"
+                  title="Stampa PDF risultati"
+                >
+                  <Printer className="h-5 w-5 text-gray-600" />
+                </button>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {!isStarted && (
@@ -607,19 +731,16 @@ function ImmagineParolaContent() {
 
       {/* Modal Celebrazione */}
       {showCelebration && (
-        <div className="fixed inset-0 bg-purple-600/90 flex items-center justify-center z-50">
-          <div className="bg-white rounded-3xl p-8 text-center max-w-md animate-bounce-in">
-            <h2 className="text-3xl font-bold text-purple-600 flex items-center justify-center gap-2 mb-4">
-              <Star className="h-8 w-8 text-yellow-500" />
+        <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
+          <img
+            src="https://www.gifanimate.com/data/media/492/fuochi-d-artificio-immagine-animata-0002.gif"
+            alt="Fuochi d'artificio"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <h2 className="text-6xl font-bold text-white drop-shadow-[0_0_20px_rgba(255,255,0,0.8)] animate-pulse">
               BRAVO!
-              <Star className="h-8 w-8 text-yellow-500" />
             </h2>
-            <img
-              src="https://media.giphy.com/media/g5R9dok94mrIvplmZd/giphy.gif"
-              alt="Celebrazione"
-              className="w-48 h-48 mx-auto mb-4"
-            />
-            <p className="text-xl text-purple-700">Ottimo lavoro!</p>
           </div>
         </div>
       )}

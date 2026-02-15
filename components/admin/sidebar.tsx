@@ -110,9 +110,15 @@ const menuItems: MenuItem[] = [
   },
   { type: 'divider', developerOnly: true },
   {
-    label: 'Tools Sviluppatore',
+    label: 'Genera Icone PWA',
     href: '/tools/genera-icone',
-    icon: Wrench,
+    icon: Image,
+    developerOnly: true,
+  },
+  {
+    label: 'Aggiorna Credenziali',
+    href: '/tools/aggiorna-credenziali',
+    icon: KeyRound,
     developerOnly: true,
   },
 ]

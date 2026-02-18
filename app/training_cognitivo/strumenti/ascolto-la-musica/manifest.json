@@ -1,0 +1,21 @@
+{
+  "name": "ascolto la musica",
+  "short_name": "ascolto la m",
+  "description": "con uno strumento come YouTube, si consente di ascoltare la musica prima archiviata dall'educatore o familiare",
+  "start_url": "/training_cognitivo/strumenti/ascolto-la-musica",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

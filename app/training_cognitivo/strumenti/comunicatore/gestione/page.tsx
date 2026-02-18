@@ -108,10 +108,35 @@ export default function GestioneComunicatorePage() {
   // Refs
   const isLoadingRef = useRef(false)
   const hasLoadedRef = useRef(false)
+  const isSavingRef = useRef(false)
+  const isLoadingItemsRef = useRef(false)
 
   // Ref per selectedPagina (evita dipendenze nel useCallback)
   const selectedPaginaRef = useRef(selectedPagina)
   selectedPaginaRef.current = selectedPagina
+
+  // Carica items di una pagina
+  const loadItems = useCallback(async (idPagina: number) => {
+    if (isLoadingItemsRef.current) return
+
+    isLoadingItemsRef.current = true
+    try {
+      const { data, error: fetchError } = await supabaseRef.current
+        .from('comunicatore_items')
+        .select('*')
+        .eq('id_pagina', idPagina)
+        .order('posizione_griglia', { ascending: true })
+
+      if (fetchError) throw fetchError
+
+      setItems(data || [])
+
+    } catch (err: any) {
+      console.error('Errore caricamento items:', err)
+    } finally {
+      isLoadingItemsRef.current = false
+    }
+  }, [])
 
   // Carica pagine
   const loadPagine = useCallback(async () => {
@@ -149,25 +174,7 @@ export default function GestioneComunicatorePage() {
       setIsLoading(false)
       isLoadingRef.current = false
     }
-  }, [user])
-
-  // Carica items di una pagina
-  const loadItems = async (idPagina: number) => {
-    try {
-      const { data, error: fetchError } = await supabaseRef.current
-        .from('comunicatore_items')
-        .select('*')
-        .eq('id_pagina', idPagina)
-        .order('posizione_griglia', { ascending: true })
-
-      if (fetchError) throw fetchError
-
-      setItems(data || [])
-
-    } catch (err: any) {
-      console.error('Errore caricamento items:', err)
-    }
-  }
+  }, [user, loadItems])
 
   // Seleziona pagina
   const selectPagina = async (pagina: ComunicatorePagina) => {
@@ -242,9 +249,10 @@ export default function GestioneComunicatorePage() {
     setShowPaginaModal(true)
   }
 
-  const savePagina = async () => {
-    if (!user || !paginaForm.nome_pagina.trim()) return
+  const savePagina = useCallback(async () => {
+    if (!user || !paginaForm.nome_pagina.trim() || isSavingRef.current) return
 
+    isSavingRef.current = true
     setIsSaving(true)
     try {
       if (editingPagina) {
@@ -284,8 +292,9 @@ export default function GestioneComunicatorePage() {
       alert('Errore: ' + err.message)
     } finally {
       setIsSaving(false)
+      isSavingRef.current = false
     }
-  }
+  }, [user, paginaForm, editingPagina, pagine.length, loadPagine])
 
   const deletePagina = async (pagina: ComunicatorePagina) => {
     if (!confirm(`Eliminare la pagina "${pagina.nome_pagina}" e tutti i suoi items?`)) return
@@ -371,16 +380,20 @@ export default function GestioneComunicatorePage() {
     setShowItemModal(true)
   }
 
-  const saveItem = async () => {
-    if (!selectedPagina || !itemForm.titolo.trim() || !itemForm.frase_tts.trim()) {
+  const saveItem = useCallback(async () => {
+    const currentSelectedPagina = selectedPaginaRef.current
+    if (!currentSelectedPagina || !itemForm.titolo.trim() || !itemForm.frase_tts.trim()) {
       alert('Compila titolo e frase TTS')
       return
     }
 
+    if (isSavingRef.current) return
+
+    isSavingRef.current = true
     setIsSaving(true)
     try {
       const itemData = {
-        id_pagina: selectedPagina.id_pagina,
+        id_pagina: currentSelectedPagina.id_pagina,
         posizione_griglia: itemForm.posizione_griglia,
         titolo: itemForm.titolo.trim(),
         frase_tts: itemForm.frase_tts.trim(),
@@ -418,15 +431,16 @@ export default function GestioneComunicatorePage() {
       }
 
       setShowItemModal(false)
-      await loadItems(selectedPagina.id_pagina)
+      await loadItems(currentSelectedPagina.id_pagina)
 
     } catch (err: any) {
       console.error('Errore salvataggio item:', err)
       alert('Errore: ' + err.message)
     } finally {
       setIsSaving(false)
+      isSavingRef.current = false
     }
-  }
+  }, [itemForm, selectedArasaac, uploadPreview, editingItem, loadItems])
 
   const deleteItem = async (item: ComunicatoreItem) => {
     if (!confirm(`Eliminare item "${item.titolo}"?`)) return
@@ -701,7 +715,7 @@ export default function GestioneComunicatorePage() {
 
                           {/* Frase TTS */}
                           <span className="text-xs text-gray-500 mt-1 text-center italic">
-                            "{item.frase_tts}"
+                            &quot;{item.frase_tts}&quot;
                           </span>
 
                           {/* Badge sottopagina */}

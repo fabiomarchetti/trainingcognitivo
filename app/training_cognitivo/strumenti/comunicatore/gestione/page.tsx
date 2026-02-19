@@ -15,7 +15,7 @@ import {
   Plus, Edit, Trash2, Save, X, Search,
   GripVertical, ChevronLeft, ChevronRight, RefreshCw,
   Volume2, Image as ImageIcon, Upload,
-  ArrowLeft
+  ArrowLeft, Users
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/hooks/useAuth'
@@ -53,10 +53,24 @@ interface ArasaacResult {
   thumbnail: string
 }
 
+interface Utente {
+  id: string
+  nome: string
+  cognome: string
+}
+
+// Ruoli staff che possono vedere tutti gli utenti
+const RUOLI_STAFF = ['sviluppatore', 'amministratore', 'direttore', 'casemanager']
+
 export default function GestioneComunicatorePage() {
   const router = useRouter()
   const supabaseRef = useRef(createClient())
   const { user, isLoading: isAuthLoading } = useAuth()
+
+  // Stato utenti (per staff)
+  const [utenti, setUtenti] = useState<Utente[]>([])
+  const [selectedUtente, setSelectedUtente] = useState<Utente | null>(null)
+  const [isRegularUser, setIsRegularUser] = useState(false)
 
   // Stato pagine
   const [pagine, setPagine] = useState<ComunicatorePagina[]>([])
@@ -115,6 +129,10 @@ export default function GestioneComunicatorePage() {
   const selectedPaginaRef = useRef(selectedPagina)
   selectedPaginaRef.current = selectedPagina
 
+  // Ref per selectedUtente
+  const selectedUtenteRef = useRef(selectedUtente)
+  selectedUtenteRef.current = selectedUtente
+
   // Carica items di una pagina
   const loadItems = useCallback(async (idPagina: number) => {
     if (isLoadingItemsRef.current) return
@@ -138,8 +156,30 @@ export default function GestioneComunicatorePage() {
     }
   }, [])
 
-  // Carica pagine
-  const loadPagine = useCallback(async () => {
+  // Carica pagine per un utente specifico
+  const loadPagineForUtente = useCallback(async (idUtente: string) => {
+    try {
+      const { data, error: fetchError } = await supabaseRef.current
+        .from('comunicatore_pagine')
+        .select('*')
+        .eq('id_utente', idUtente)
+        .order('numero_ordine', { ascending: true })
+
+      if (fetchError) throw fetchError
+
+      setPagine(data || [])
+      setSelectedPagina(null)
+      setItems([])
+      setCurrentItemsPageIndex(0)
+
+    } catch (err: any) {
+      console.error('Errore caricamento pagine:', err)
+      setError(err.message)
+    }
+  }, [])
+
+  // Carica utenti in base al ruolo
+  const loadUtenti = useCallback(async () => {
     if (!user || isLoadingRef.current) return
 
     isLoadingRef.current = true
@@ -147,34 +187,94 @@ export default function GestioneComunicatorePage() {
     setError(null)
 
     try {
-      const { data, error: fetchError } = await supabaseRef.current
-        .from('comunicatore_pagine')
-        .select('*')
-        .eq('id_utente', user.id)
-        .order('numero_ordine', { ascending: true })
+      // Prima ottieni il ruolo dell'utente corrente (con join sulla tabella ruoli)
+      const { data: profileData, error: profileError } = await supabaseRef.current
+        .from('profiles')
+        .select('id, nome, cognome, id_ruolo, ruoli(codice)')
+        .eq('id', user.id)
+        .single()
 
-      if (fetchError) throw fetchError
+      if (profileError) throw profileError
 
-      setPagine(data || [])
-      hasLoadedRef.current = true
+      const ruolo = (profileData?.ruoli as any)?.codice || 'utente'
 
-      // Se c'è una pagina selezionata, ricarica i suoi items
-      if (selectedPaginaRef.current) {
-        const updated = data?.find((p: ComunicatorePagina) => p.id_pagina === selectedPaginaRef.current?.id_pagina)
-        if (updated) {
-          setSelectedPagina(updated)
-          await loadItems(updated.id_pagina)
+      // Se è un utente normale, auto-seleziona se stesso
+      if (ruolo === 'utente') {
+        setIsRegularUser(true)
+        const currentUser: Utente = {
+          id: user.id,
+          nome: profileData?.nome || '',
+          cognome: profileData?.cognome || ''
+        }
+        setUtenti([currentUser])
+        setSelectedUtente(currentUser)
+        await loadPagineForUtente(user.id)
+        hasLoadedRef.current = true
+        return
+      }
+
+      // Se è staff (sviluppatore, admin, direttore, casemanager), carica tutti gli utenti con ruolo 'utente'
+      if (RUOLI_STAFF.includes(ruolo)) {
+        // Trova l'id del ruolo 'utente'
+        const { data: ruoloUtente } = await supabaseRef.current
+          .from('ruoli')
+          .select('id')
+          .eq('codice', 'utente')
+          .single()
+
+        if (ruoloUtente) {
+          const { data: profili, error: profError } = await supabaseRef.current
+            .from('profiles')
+            .select('id, nome, cognome')
+            .eq('id_ruolo', ruoloUtente.id)
+            .order('cognome')
+
+          if (profError) throw profError
+          setUtenti(profili || [])
+        }
+      }
+      // Se è educatore, carica solo utenti assegnati
+      else if (ruolo === 'educatore') {
+        const { data: assegnazioni, error: assError } = await supabaseRef.current
+          .from('educatori_utenti')
+          .select('id_utente')
+          .eq('id_educatore', user.id)
+          .eq('stato', 'attivo')
+
+        if (assError) throw assError
+
+        if (assegnazioni && assegnazioni.length > 0) {
+          const utentiIds = assegnazioni.map(a => a.id_utente)
+
+          const { data: profili, error: profError } = await supabaseRef.current
+            .from('profiles')
+            .select('id, nome, cognome')
+            .in('id', utentiIds)
+            .order('cognome')
+
+          if (profError) throw profError
+          setUtenti(profili || [])
+        } else {
+          setUtenti([])
         }
       }
 
+      hasLoadedRef.current = true
+
     } catch (err: any) {
-      console.error('Errore caricamento pagine:', err)
+      console.error('Errore caricamento utenti:', err)
       setError(err.message)
     } finally {
       setIsLoading(false)
       isLoadingRef.current = false
     }
-  }, [user, loadItems])
+  }, [user, loadPagineForUtente])
+
+  // Seleziona utente
+  const selectUtente = async (utente: Utente) => {
+    setSelectedUtente(utente)
+    await loadPagineForUtente(utente.id)
+  }
 
   // Seleziona pagina
   const selectPagina = async (pagina: ComunicatorePagina) => {
@@ -186,9 +286,9 @@ export default function GestioneComunicatorePage() {
   // Effetto iniziale
   useEffect(() => {
     if (!isAuthLoading && user) {
-      loadPagine()
+      loadUtenti()
     }
-  }, [isAuthLoading, user, loadPagine])
+  }, [isAuthLoading, user, loadUtenti])
 
   // Ricerca ARASAAC con debounce
   useEffect(() => {
@@ -250,7 +350,8 @@ export default function GestioneComunicatorePage() {
   }
 
   const savePagina = useCallback(async () => {
-    if (!user || !paginaForm.nome_pagina.trim() || isSavingRef.current) return
+    const currentSelectedUtente = selectedUtenteRef.current
+    if (!currentSelectedUtente || !paginaForm.nome_pagina.trim() || isSavingRef.current) return
 
     isSavingRef.current = true
     setIsSaving(true)
@@ -274,7 +375,7 @@ export default function GestioneComunicatorePage() {
         const { error } = await supabaseRef.current
           .from('comunicatore_pagine')
           .insert({
-            id_utente: user.id,
+            id_utente: currentSelectedUtente.id,
             nome_pagina: paginaForm.nome_pagina.trim(),
             descrizione: paginaForm.descrizione.trim() || null,
             numero_ordine: pagine.length,
@@ -285,7 +386,7 @@ export default function GestioneComunicatorePage() {
       }
 
       setShowPaginaModal(false)
-      await loadPagine()
+      await loadPagineForUtente(currentSelectedUtente.id)
 
     } catch (err: any) {
       console.error('Errore salvataggio pagina:', err)
@@ -294,7 +395,7 @@ export default function GestioneComunicatorePage() {
       setIsSaving(false)
       isSavingRef.current = false
     }
-  }, [user, paginaForm, editingPagina, pagine.length, loadPagine])
+  }, [paginaForm, editingPagina, pagine.length, loadPagineForUtente])
 
   const deletePagina = async (pagina: ComunicatorePagina) => {
     if (!confirm(`Eliminare la pagina "${pagina.nome_pagina}" e tutti i suoi items?`)) return
@@ -312,7 +413,9 @@ export default function GestioneComunicatorePage() {
         setItems([])
       }
 
-      await loadPagine()
+      if (selectedUtente) {
+        await loadPagineForUtente(selectedUtente.id)
+      }
 
     } catch (err: any) {
       console.error('Errore eliminazione pagina:', err)
@@ -546,23 +649,66 @@ export default function GestioneComunicatorePage() {
       </header>
 
       <main className="max-w-6xl mx-auto p-6">
+        {/* Dropdown selezione utente - visibile solo per staff */}
+        {!isRegularUser && (
+          <div className="mb-6">
+            <div className="bg-white rounded-2xl shadow-lg p-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-purple-700">
+                  <Users className="h-5 w-5" />
+                  <span className="font-medium">Seleziona Utente:</span>
+                </div>
+                <select
+                  value={selectedUtente?.id || ''}
+                  onChange={(e) => {
+                    const utente = utenti.find(u => u.id === e.target.value)
+                    if (utente) selectUtente(utente)
+                  }}
+                  className="flex-1 max-w-md px-4 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+                >
+                  <option value="">-- Seleziona un utente --</option>
+                  {utenti.map((utente) => (
+                    <option key={utente.id} value={utente.id}>
+                      {utente.cognome} {utente.nome}
+                    </option>
+                  ))}
+                </select>
+                {utenti.length === 0 && (
+                  <span className="text-gray-500 text-sm">Nessun utente assegnato</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Lista Pagine */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <div className="bg-purple-100 p-4 flex justify-between items-center">
-                <h2 className="font-bold text-purple-800">Pagine</h2>
+                <h2 className="font-bold text-purple-800">
+                  {selectedUtente
+                    ? `Pagine di ${selectedUtente.nome} ${selectedUtente.cognome}`
+                    : 'Pagine'
+                  }
+                </h2>
                 <button
                   onClick={openCreatePaginaModal}
-                  className="p-2 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition-colors"
-                  title="Nuova Pagina"
+                  disabled={!selectedUtente}
+                  className="p-2 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={selectedUtente ? "Nuova Pagina" : "Seleziona prima un utente"}
                 >
                   <Plus className="h-5 w-5" />
                 </button>
               </div>
 
               <div className="divide-y max-h-[60vh] overflow-y-auto">
-                {pagine.length === 0 ? (
+                {!selectedUtente ? (
+                  <div className="p-6 text-center text-gray-500">
+                    <Users className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                    <p>Seleziona un utente per gestire le sue pagine</p>
+                  </div>
+                ) : pagine.length === 0 ? (
                   <div className="p-6 text-center text-gray-500">
                     <p className="mb-2">Nessuna pagina creata</p>
                     <button

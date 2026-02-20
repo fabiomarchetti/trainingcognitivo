@@ -232,7 +232,7 @@ export default function EducatoreAscoltoMusicaPage() {
     // Calcola dimensioni: 2/3 schermo a destra
     const screenWidth = window.screen.availWidth
     const screenHeight = window.screen.availHeight
-    const screenLeft = window.screen.availLeft || 0
+    const screenLeft = (window.screen as unknown as { availLeft?: number }).availLeft || 0
 
     const youtubeWidth = Math.floor(screenWidth * 0.667)
     const youtubeHeight = screenHeight

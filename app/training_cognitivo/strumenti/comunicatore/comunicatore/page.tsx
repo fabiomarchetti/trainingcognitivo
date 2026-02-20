@@ -11,8 +11,8 @@
  */
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Home, Settings, ChevronLeft, ChevronRight, RefreshCw,
   Menu, X, Download, Volume2, VolumeX, Play, Pause,
@@ -47,10 +47,33 @@ interface ComunicatorePagina {
   items: ComunicatoreItem[]
 }
 
+// Loading fallback per Suspense
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-indigo-800 flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-white font-medium">Caricamento...</p>
+      </div>
+    </div>
+  )
+}
+
+// Componente principale wrappato con Suspense per useSearchParams
 export default function ComunicatorePage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ComunicatoreContent />
+    </Suspense>
+  )
+}
+
+function ComunicatoreContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabaseRef = useRef(createClient())
   const { user, isLoading: isAuthLoading } = useAuth()
+  const utenteIdFromUrl = searchParams.get('utente')
 
   // Stato principale
   const [pagine, setPagine] = useState<ComunicatorePagina[]>([])
@@ -78,6 +101,7 @@ export default function ComunicatorePage() {
   // Touch/Swipe
   const touchStartX = useRef<number>(0)
   const touchStartY = useRef<number>(0)
+  const isSwiping = useRef<boolean>(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Refs per evitare chiamate multiple
@@ -92,12 +116,15 @@ export default function ComunicatorePage() {
     setIsLoading(true)
     setError(null)
 
+    // Usa l'ID utente dalla URL se presente, altrimenti l'utente loggato
+    const targetUserId = utenteIdFromUrl || user.id
+
     try {
       // Carica pagine attive dell'utente
       const { data: pagineData, error: pagineError } = await supabaseRef.current
         .from('comunicatore_pagine')
         .select('*')
-        .eq('id_utente', user.id)
+        .eq('id_utente', targetUserId)
         .in('stato', ['attiva', 'sottopagina'])
         .order('numero_ordine', { ascending: true })
 
@@ -140,7 +167,7 @@ export default function ComunicatorePage() {
       setIsLoading(false)
       isLoadingRef.current = false
     }
-  }, [user])
+  }, [user, utenteIdFromUrl])
 
   // Carica pagine quando l'utente è autenticato
   useEffect(() => {
@@ -259,34 +286,51 @@ export default function ComunicatorePage() {
     }
   }
 
+  // Navigazione pagine (ciclica)
+  const goToNextPage = useCallback(() => {
+    if (pagine.length <= 1) return
+    setCurrentPageIndex(prev => (prev + 1) % pagine.length)
+    setCurrentItemsPageIndex(0)
+  }, [pagine.length])
+
+  const goToPrevPage = useCallback(() => {
+    if (pagine.length <= 1) return
+    setCurrentPageIndex(prev => (prev - 1 + pagine.length) % pagine.length)
+    setCurrentItemsPageIndex(0)
+  }, [pagine.length])
+
   // Navigazione pagine con swipe
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
     touchStartY.current = e.touches[0].clientY
+    isSwiping.current = false
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const deltaX = e.touches[0].clientX - touchStartX.current
+    const deltaY = e.touches[0].clientY - touchStartY.current
+
+    // Se il movimento orizzontale è significativo, marca come swipe
+    if (Math.abs(deltaX) > 20 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      isSwiping.current = true
+    }
   }
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     const touchEndX = e.changedTouches[0].clientX
-    const touchEndY = e.changedTouches[0].clientY
     const deltaX = touchEndX - touchStartX.current
-    const deltaY = touchEndY - touchStartY.current
 
-    // Swipe orizzontale (minimo 50px, prevalente rispetto a verticale)
-    if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+    // Swipe orizzontale (minimo 50px per confermare)
+    if (isSwiping.current && Math.abs(deltaX) > 50) {
       if (deltaX > 0) {
-        // Swipe destra -> pagina precedente
-        if (currentPageIndex > 0) {
-          setCurrentPageIndex(prev => prev - 1)
-          setCurrentItemsPageIndex(0)
-        }
+        // Swipe destra -> pagina precedente (ciclico)
+        goToPrevPage()
       } else {
-        // Swipe sinistra -> pagina successiva
-        if (currentPageIndex < pagine.length - 1) {
-          setCurrentPageIndex(prev => prev + 1)
-          setCurrentItemsPageIndex(0)
-        }
+        // Swipe sinistra -> pagina successiva (ciclico)
+        goToNextPage()
       }
     }
+    isSwiping.current = false
   }
 
   // Navigazione items (gruppi da 4)
@@ -460,8 +504,9 @@ export default function ComunicatorePage() {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen bg-gradient-to-br from-purple-50 to-violet-100 flex flex-col overflow-hidden"
+      className="min-h-screen bg-gradient-to-br from-purple-50 to-violet-100 flex flex-col overflow-hidden touch-pan-y"
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       {/* Bottone Home */}
@@ -537,7 +582,12 @@ export default function ComunicatorePage() {
       )}
 
       {/* Griglia Items */}
-      <div className={`flex-1 p-4 grid ${getGridLayout(items.length)} gap-4`}>
+      <div
+        className={`flex-1 p-4 grid ${getGridLayout(items.length)} gap-4 touch-pan-y`}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         {items.map((item, index) => {
           const imageUrl = getImageUrl(item)
           const isFocused = focusedItemIndex === index
@@ -546,10 +596,14 @@ export default function ComunicatorePage() {
           return (
             <button
               key={item.id_item}
-              onClick={() => handleItemClick(item)}
+              onClick={() => {
+                // Non eseguire click se è in corso uno swipe
+                if (isSwiping.current) return
+                handleItemClick(item)
+              }}
               className={`
                 relative bg-white rounded-2xl shadow-lg p-4 flex flex-col items-center justify-center
-                transition-all duration-200 hover:shadow-xl hover:-translate-y-1
+                transition-all duration-200 hover:shadow-xl hover:-translate-y-1 touch-manipulation
                 ${isFocused ? 'ring-4 ring-orange-400 ring-offset-2 scale-105' : ''}
                 ${isSpeakingItem ? 'ring-4 ring-purple-500 animate-pulse' : ''}
                 ${items.length === 3 && index === 2 ? 'col-span-2 max-w-[50%] mx-auto' : ''}
@@ -593,6 +647,27 @@ export default function ComunicatorePage() {
           )
         })}
       </div>
+
+      {/* Frecce navigazione pagine (ai lati) */}
+      {pagine.length > 1 && !currentSubPage && (
+        <>
+          {/* Freccia sinistra - pagina precedente */}
+          <button
+            onClick={goToPrevPage}
+            className="fixed left-2 top-1/2 -translate-y-1/2 z-40 w-14 h-20 bg-white/90 rounded-xl shadow-lg border-2 border-purple-500 flex items-center justify-center transition-all hover:bg-purple-100 hover:scale-105 active:scale-95"
+          >
+            <ChevronLeft className="h-10 w-10 text-purple-600" />
+          </button>
+
+          {/* Freccia destra - pagina successiva */}
+          <button
+            onClick={goToNextPage}
+            className="fixed right-2 top-1/2 -translate-y-1/2 z-40 w-14 h-20 bg-white/90 rounded-xl shadow-lg border-2 border-purple-500 flex items-center justify-center transition-all hover:bg-purple-100 hover:scale-105 active:scale-95"
+          >
+            <ChevronRight className="h-10 w-10 text-purple-600" />
+          </button>
+        </>
+      )}
 
       {/* Indicatori Pagina (se più pagine) */}
       {pagine.length > 1 && !currentSubPage && (

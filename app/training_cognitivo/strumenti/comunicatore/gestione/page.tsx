@@ -640,7 +640,12 @@ export default function GestioneComunicatorePage() {
           </h1>
 
           <button
-            onClick={() => router.push('/training_cognitivo/strumenti/comunicatore/comunicatore')}
+            onClick={() => {
+              const url = selectedUtente
+                ? `/training_cognitivo/strumenti/comunicatore/comunicatore?utente=${selectedUtente.id}`
+                : '/training_cognitivo/strumenti/comunicatore/comunicatore'
+              router.push(url)
+            }}
             className="px-4 py-2 bg-white text-purple-700 font-bold rounded-lg hover:bg-purple-50 transition-colors"
           >
             Vai al Comunicatore

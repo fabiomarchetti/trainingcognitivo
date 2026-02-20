@@ -100,6 +100,7 @@ function AscoltaMusicaContent() {
   const isLoadingRef = useRef(false)
   const hasLoadedRef = useRef(false)
   const isPlayerInitializing = useRef(false)
+  const pausedAtTimeRef = useRef<number | null>(null) // Posizione video quando timer scade
 
   // Genera session ID
   useEffect(() => {
@@ -414,11 +415,17 @@ function AscoltaMusicaContent() {
     timerIntervalRef.current = setInterval(() => {
       setTimerRemaining(prev => {
         if (prev <= 1) {
-          // Timer scaduto: metti in pausa
+          // Timer scaduto: salva posizione e metti in pausa
           clearInterval(timerIntervalRef.current!)
           timerIntervalRef.current = null
           setTimerActive(false)
           if (playerRef.current) {
+            // Salva la posizione corrente prima di mettere in pausa
+            try {
+              pausedAtTimeRef.current = playerRef.current.getCurrentTime()
+            } catch (e) {
+              pausedAtTimeRef.current = null
+            }
             playerRef.current.pauseVideo()
           }
           setIsPlaying(false)
@@ -438,6 +445,27 @@ function AscoltaMusicaContent() {
     if (playMode === 'persistent' && timerActive) {
       return
     }
+
+    // Se è lo stesso brano e il player esiste, riprendi dalla posizione salvata
+    if (selectedBrano?.id_brano === brano.id_brano && playerRef.current && pausedAtTimeRef.current !== null) {
+      try {
+        playerRef.current.seekTo(pausedAtTimeRef.current, true)
+        playerRef.current.playVideo()
+        setIsPlaying(true)
+        pausedAtTimeRef.current = null // Reset posizione salvata
+        // Avvia timer se in modalità timed o persistent
+        if (playMode === 'timed' || playMode === 'persistent') {
+          startTimer()
+        }
+        return
+      } catch (e) {
+        // Se fallisce, continua con la logica normale
+        console.log('Errore ripresa video, ricreo player')
+      }
+    }
+
+    // Reset posizione salvata quando si cambia brano
+    pausedAtTimeRef.current = null
 
     setSelectedBrano(brano)
     setIsPlaying(true)
@@ -466,7 +494,7 @@ function AscoltaMusicaContent() {
         startTimer()
       }
     }, 100)
-  }, [selectedUtente, initOrUpdatePlayer, playMode, timerActive, startTimer])
+  }, [selectedUtente, selectedBrano, initOrUpdatePlayer, playMode, timerActive, startTimer])
 
   // Riproduci brano casuale
   const playRandomBrano = useCallback(() => {

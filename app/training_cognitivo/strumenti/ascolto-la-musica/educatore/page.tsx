@@ -7,7 +7,7 @@
  */
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   ArrowLeft, Plus, Trash2, Save, X, Search,
@@ -38,7 +38,28 @@ interface Utente {
 // Ruoli staff che possono vedere tutti gli utenti
 const RUOLI_STAFF = ['sviluppatore', 'amministratore', 'direttore', 'casemanager']
 
+// Loading fallback per Suspense
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-white font-medium">Caricamento...</p>
+      </div>
+    </div>
+  )
+}
+
+// Componente principale wrappato con Suspense per useSearchParams
 export default function EducatoreAscoltoMusicaPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <EducatoreAscoltoMusicaContent />
+    </Suspense>
+  )
+}
+
+function EducatoreAscoltoMusicaContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabaseRef = useRef(createClient())

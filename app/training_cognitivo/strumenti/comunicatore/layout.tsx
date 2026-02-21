@@ -1,10 +1,9 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 
 export const metadata: Metadata = {
   title: 'Comunicatore CAA - Training Cognitivo',
   description: 'Sistema di Comunicazione Aumentativa Alternativa con pittogrammi e sintesi vocale',
   manifest: '/training_cognitivo/strumenti/comunicatore/manifest.webmanifest',
-  themeColor: '#7C3AED',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -17,6 +16,14 @@ export const metadata: Metadata = {
     icon: '/training_cognitivo/strumenti/comunicatore/icons/icon-192x192.png',
     apple: '/training_cognitivo/strumenti/comunicatore/icons/icon-192x192.png',
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#7C3AED',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
 }
 
 export default function ComunicatoreLayout({

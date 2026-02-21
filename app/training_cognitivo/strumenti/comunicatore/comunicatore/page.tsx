@@ -341,24 +341,144 @@ function ComunicatoreContent() {
     }
   }
 
-  // Timer automatico
-  useEffect(() => {
-    if (timerEnabled && currentPage && currentPage.items.length > 0) {
-      timerRef.current = setInterval(() => {
-        setFocusedItemIndex(prev => {
-          const items = getCurrentItems()
-          if (prev === null) return 0
-          return (prev + 1) % items.length
-        })
-      }, timerSeconds * 1000)
+  // Swipe con mouse wheel / trackpad
+  const lastWheelTime = useRef<number>(0)
+  const wheelDeltaAccum = useRef<number>(0)
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    // Solo se più pagine e non in sottopagina
+    if (pagine.length <= 1 || currentSubPage) return
+
+    const now = Date.now()
+
+    // Reset accumulator se è passato troppo tempo
+    if (now - lastWheelTime.current > 200) {
+      wheelDeltaAccum.current = 0
     }
+    lastWheelTime.current = now
+
+    // Accumula il delta orizzontale (o verticale con shift)
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
+    wheelDeltaAccum.current += delta
+
+    // Soglia per cambiare pagina
+    if (Math.abs(wheelDeltaAccum.current) > 100) {
+      if (wheelDeltaAccum.current > 0) {
+        goToNextPage()
+      } else {
+        goToPrevPage()
+      }
+      wheelDeltaAccum.current = 0
+    }
+  }, [pagine.length, currentSubPage, goToNextPage, goToPrevPage])
+
+  // Ref per tracciare lo stato del timer
+  const timerStateRef = useRef({
+    pageIndex: 0,
+    itemIndex: 0
+  })
+
+  // Funzione per pronunciare un item specifico
+  const speakItem = useCallback((item: ComunicatoreItem | undefined) => {
+    if (!item || !ttsEnabled) return
+
+    // Cancella speech precedenti
+    window.speechSynthesis.cancel()
+
+    // Delay necessario dopo cancel()
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(item.frase_tts)
+      utterance.lang = 'it-IT'
+      utterance.rate = 0.9
+      utterance.pitch = 1
+
+      // Prova a usare una voce locale italiana (più affidabile)
+      const voices = window.speechSynthesis.getVoices()
+      const italianVoice = voices.find(v => v.lang === 'it-IT' && v.localService)
+        || voices.find(v => v.lang.startsWith('it'))
+      if (italianVoice) {
+        utterance.voice = italianVoice
+      }
+
+      utterance.onstart = () => {
+        setIsSpeaking(true)
+        setSpeakingItemId(item.id_item)
+      }
+
+      utterance.onend = () => {
+        setIsSpeaking(false)
+        setSpeakingItemId(null)
+      }
+
+      utterance.onerror = () => {
+        setIsSpeaking(false)
+        setSpeakingItemId(null)
+      }
+
+      window.speechSynthesis.speak(utterance)
+    }, 50)
+  }, [ttsEnabled])
+
+  // Timer automatico - gestisce focus, pronuncia e cambio pagina
+  useEffect(() => {
+    if (!timerEnabled || pagine.length === 0) {
+      return
+    }
+
+    // Funzione che avanza al prossimo item
+    const advanceTimer = () => {
+      const state = timerStateRef.current
+      const currentPagina = pagine[state.pageIndex]
+      if (!currentPagina) return
+
+      const items = currentPagina.items || []
+      const nextItemIndex = state.itemIndex + 1
+
+      if (nextItemIndex >= items.length) {
+        // Fine pagina: passa alla prossima (ciclico)
+        const nextPageIndex = (state.pageIndex + 1) % pagine.length
+        timerStateRef.current = { pageIndex: nextPageIndex, itemIndex: 0 }
+
+        setCurrentPageIndex(nextPageIndex)
+        setCurrentItemsPageIndex(0)
+        setFocusedItemIndex(0)
+
+        // Pronuncia primo item nuova pagina
+        const nextPagina = pagine[nextPageIndex]
+        if (nextPagina?.items?.[0]) {
+          speakItem(nextPagina.items[0])
+        }
+      } else {
+        // Prossimo item nella pagina
+        timerStateRef.current.itemIndex = nextItemIndex
+        setFocusedItemIndex(nextItemIndex)
+
+        // Pronuncia item
+        if (items[nextItemIndex]) {
+          speakItem(items[nextItemIndex])
+        }
+      }
+    }
+
+    // Inizializza: focus e pronuncia primo item
+    timerStateRef.current = { pageIndex: currentPageIndex, itemIndex: 0 }
+    setFocusedItemIndex(0)
+
+    const firstPagina = pagine[currentPageIndex]
+    if (firstPagina?.items?.[0]) {
+      speakItem(firstPagina.items[0])
+    }
+
+    // Avvia timer
+    timerRef.current = setInterval(advanceTimer, timerSeconds * 1000)
 
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current)
       }
+      window.speechSynthesis.cancel()
     }
-  }, [timerEnabled, timerSeconds, currentPage, currentItemsPageIndex])
+  }, [timerEnabled, timerSeconds, pagine, speakItem])
 
   // Navigazione con tastiera
   useEffect(() => {
@@ -432,13 +552,61 @@ function ComunicatoreContent() {
   const getGridLayout = (itemCount: number): string => {
     switch (itemCount) {
       case 1:
-        return 'grid-cols-1'
+        return 'grid-cols-1 place-items-center'
       case 2:
-        return 'grid-cols-2'
+        return 'grid-cols-2 place-items-center'
       case 3:
-        return 'grid-cols-2'
+        return 'grid-cols-2 place-items-center'
       default:
         return 'grid-cols-2 grid-rows-2'
+    }
+  }
+
+  // Calcola classi item in base al numero di items
+  const getItemClasses = (itemCount: number, index: number): string => {
+    switch (itemCount) {
+      case 1:
+        // Un solo item: centrato, più piccolo con margini, testo e immagine grandi
+        return 'max-w-[70%] aspect-square'
+      case 2:
+        // Due items: più margini
+        return 'max-w-[85%] aspect-square'
+      case 3:
+        // Tre items: il terzo occupa tutta la riga ma stessa dimensione
+        if (index === 2) {
+          return 'col-span-2 max-w-[42.5%] aspect-square'
+        }
+        return 'max-w-[85%] aspect-square'
+      default:
+        return ''
+    }
+  }
+
+  // Calcola dimensioni immagine in base al numero di items
+  const getImageClasses = (itemCount: number): string => {
+    switch (itemCount) {
+      case 1:
+        return 'w-full max-w-[280px] max-h-[280px]'
+      case 2:
+        return 'w-full max-w-[220px] max-h-[220px]'
+      case 3:
+        return 'w-full max-w-[200px] max-h-[200px]'
+      default:
+        return 'w-full max-w-[180px] max-h-[180px]'
+    }
+  }
+
+  // Calcola dimensioni testo in base al numero di items
+  const getTextClasses = (itemCount: number): string => {
+    switch (itemCount) {
+      case 1:
+        return 'text-3xl'
+      case 2:
+        return 'text-2xl'
+      case 3:
+        return 'text-xl'
+      default:
+        return 'text-lg'
     }
   }
 
@@ -508,6 +676,7 @@ function ComunicatoreContent() {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onWheel={handleWheel}
     >
       {/* Bottone Home */}
       <button
@@ -583,7 +752,7 @@ function ComunicatoreContent() {
 
       {/* Griglia Items */}
       <div
-        className={`flex-1 p-4 grid ${getGridLayout(items.length)} gap-4 touch-pan-y`}
+        className={`flex-1 grid ${getGridLayout(items.length)} gap-4 touch-pan-y ${items.length <= 2 ? 'p-8' : 'p-4'}`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -602,11 +771,11 @@ function ComunicatoreContent() {
                 handleItemClick(item)
               }}
               className={`
-                relative bg-white rounded-2xl shadow-lg p-4 flex flex-col items-center justify-center
+                relative bg-white rounded-2xl shadow-lg p-6 flex flex-col items-center justify-center
                 transition-all duration-200 hover:shadow-xl hover:-translate-y-1 touch-manipulation
                 ${isFocused ? 'ring-4 ring-orange-400 ring-offset-2 scale-105' : ''}
                 ${isSpeakingItem ? 'ring-4 ring-purple-500 animate-pulse' : ''}
-                ${items.length === 3 && index === 2 ? 'col-span-2 max-w-[50%] mx-auto' : ''}
+                ${getItemClasses(items.length, index)}
               `}
               style={{
                 backgroundColor: item.colore_sfondo,
@@ -624,14 +793,14 @@ function ComunicatoreContent() {
                 <img
                   src={imageUrl}
                   alt={item.titolo}
-                  className="w-full max-w-[180px] max-h-[180px] object-contain mb-3"
+                  className={`${getImageClasses(items.length)} object-contain mb-3`}
                   loading="lazy"
                 />
               )}
 
               {/* Titolo */}
               <span
-                className="text-lg font-bold text-center leading-tight"
+                className={`${getTextClasses(items.length)} font-bold text-center leading-tight`}
                 style={{ color: item.colore_testo }}
               >
                 {item.titolo}

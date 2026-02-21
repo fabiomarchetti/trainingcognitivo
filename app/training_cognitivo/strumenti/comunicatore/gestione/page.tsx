@@ -654,6 +654,19 @@ export default function GestioneComunicatorePage() {
       </header>
 
       <main className="max-w-6xl mx-auto p-6">
+        {/* Avviso compatibilità browser */}
+        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+          <div className="flex-shrink-0 w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+            <span className="text-amber-600 text-lg">⚠</span>
+          </div>
+          <div>
+            <h3 className="font-semibold text-amber-800">Nota sulla sintesi vocale</h3>
+            <p className="text-sm text-amber-700 mt-1">
+              Se la voce non funziona su <strong>Chrome/Safari su Mac</strong>, usa <strong>Firefox</strong> che ha un supporto migliore per la sintesi vocale.
+            </p>
+          </div>
+        </div>
+
         {/* Dropdown selezione utente - visibile solo per staff */}
         {!isRegularUser && (
           <div className="mb-6">

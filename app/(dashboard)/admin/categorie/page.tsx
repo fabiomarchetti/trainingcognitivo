@@ -16,7 +16,7 @@ import type { CategoriaEsercizi } from '@/lib/supabase/types'
 const CACHE_KEY = 'admin:categorie'
 
 export default function CategoriePage() {
-  const { profile } = useAuth()
+  const { profile, isLoading: isAuthLoading } = useAuth()
   const [categorie, setCategorie] = useState<CategoriaEsercizi[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -120,11 +120,12 @@ export default function CategoriePage() {
   }
 
   useEffect(() => {
+    if (isAuthLoading) return
     if (hasLoadedRef.current) return
     if (!canAccess) return
     loadCategorie()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile])
+  }, [isAuthLoading, profile])
 
   // Apri modal creazione
   const handleOpenCreateModal = () => {

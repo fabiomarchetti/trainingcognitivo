@@ -19,7 +19,7 @@ type Profile = ProfileWithRelations
 const CACHE_KEY = 'admin:educatori'
 
 export default function EducatoriPage() {
-  const { profile } = useAuth()
+  const { profile, isLoading: isAuthLoading } = useAuth()
   const [educatori, setEducatori] = useState<Profile[]>([])
   const [sedi, setSedi] = useState<Sede[]>([])
   const [settori, setSettori] = useState<Settore[]>([])
@@ -166,11 +166,12 @@ export default function EducatoriPage() {
   }
 
   useEffect(() => {
+    if (isAuthLoading) return
     if (hasLoadedRef.current || !canAccess) return
     loadEducatori()
     loadSupportData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile])
+  }, [isAuthLoading, profile])
 
   // Apri modal creazione
   const handleOpenCreateModal = () => {

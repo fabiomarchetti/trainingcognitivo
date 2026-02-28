@@ -1,0 +1,21 @@
+{
+  "name": "movimento corpo youtube",
+  "short_name": "movimento co",
+  "description": "ascolta la musica e vedi video youtube con il movimento delle parti del corpo",
+  "start_url": "/training_cognitivo/strumenti/movimento-corpo-youtube",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

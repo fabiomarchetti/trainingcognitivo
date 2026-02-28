@@ -20,7 +20,7 @@ type Profile = ProfileWithRelations
 const CACHE_KEY = 'admin:utenti'
 
 export default function UtentiPage() {
-  const { profile, user } = useAuth()
+  const { profile, user, isLoading: isAuthLoading } = useAuth()
   const [utenti, setUtenti] = useState<Profile[]>([])
   const [sedi, setSedi] = useState<Sede[]>([])
   const [settori, setSettori] = useState<Settore[]>([])
@@ -187,11 +187,12 @@ export default function UtentiPage() {
   }
 
   useEffect(() => {
+    if (isAuthLoading) return
     if (hasLoadedRef.current || !canAccess) return
     loadUtenti()
     loadSupportData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile])
+  }, [isAuthLoading, profile])
 
   // Apri modal creazione
   const handleOpenCreateModal = () => {

@@ -18,7 +18,7 @@ type Profile = ProfileWithRelations
 const CACHE_KEY = 'admin:staff'
 
 export default function StaffPage() {
-  const { profile } = useAuth()
+  const { profile, isLoading: isAuthLoading } = useAuth()
   const [staff, setStaff] = useState<Profile[]>([])
   const [ruoliDisponibili, setRuoliDisponibili] = useState<Ruolo[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -169,11 +169,12 @@ export default function StaffPage() {
   }
 
   useEffect(() => {
+    if (isAuthLoading) return
     if (hasLoadedRef.current || profile?.ruolo?.codice !== 'sviluppatore') return
     loadStaff()
     loadRuoli()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile])
+  }, [isAuthLoading, profile])
 
   // Apri modal creazione
   const handleOpenCreateModal = () => {

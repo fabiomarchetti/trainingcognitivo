@@ -21,7 +21,7 @@ interface EsercizioWithCategoria extends Esercizio {
 const CACHE_KEY = 'admin:esercizi'
 
 export default function EserciziPage() {
-  const { profile } = useAuth()
+  const { profile, isLoading: isAuthLoading } = useAuth()
   const [esercizi, setEsercizi] = useState<EsercizioWithCategoria[]>([])
   const [categorie, setCategorie] = useState<CategoriaEsercizi[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -139,11 +139,12 @@ export default function EserciziPage() {
   }
 
   useEffect(() => {
+    if (isAuthLoading) return
     if (hasLoadedRef.current || !canAccess) return
     loadEsercizi()
     loadCategorie()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile])
+  }, [isAuthLoading, profile])
 
   // Apri modal creazione
   const handleOpenCreateModal = () => {

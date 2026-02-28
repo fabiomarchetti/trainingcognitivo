@@ -3,7 +3,7 @@
  */
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -25,7 +25,7 @@ import {
   Wrench
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/components/auth'
 
 interface SidebarProps {
   isOpen?: boolean
@@ -125,35 +125,9 @@ const menuItems: MenuItem[] = [
 
 export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
   const pathname = usePathname()
-  const [userRole, setUserRole] = useState<string>('')
-
-  // Carica ruolo utente
-  useEffect(() => {
-    const loadUserRole = async () => {
-      try {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
-        console.log('[Sidebar] User:', user?.id)
-        if (user) {
-          // JOIN con tabella ruoli per ottenere il codice del ruolo
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('id_ruolo, ruoli(codice)')
-            .eq('id', user.id)
-            .single()
-          console.log('[Sidebar] Profile:', profile, 'Error:', error)
-          if (profile && profile.ruoli) {
-            const ruoloCodice = (profile.ruoli as any).codice
-            setUserRole(ruoloCodice)
-            console.log('[Sidebar] Ruolo impostato:', ruoloCodice)
-          }
-        }
-      } catch (err) {
-        console.error('[Sidebar] Errore caricamento ruolo:', err)
-      }
-    }
-    loadUserRole()
-  }, [])
+  // Usa il contesto auth condiviso — evita fetch autonome che causano race condition
+  const { profile } = useAuth()
+  const userRole = (profile?.ruolo as any)?.codice || ''
 
   // Filtra menu items in base al ruolo
   const filteredMenuItems = menuItems.filter(item => {

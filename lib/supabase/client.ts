@@ -68,23 +68,9 @@ export function createClient(): SupabaseClient {
       persistSession: true,
       autoRefreshToken: true,
     },
-    global: {
-      // Fetch custom che ignora AbortError
-      fetch: async (url, options) => {
-        try {
-          return await fetch(url, options)
-        } catch (error: any) {
-          // Se è un AbortError, ritorna una response vuota invece di lanciare
-          if (error?.name === 'AbortError' || error?.message?.includes('AbortError')) {
-            return new Response(JSON.stringify({ data: null, error: null }), {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' },
-            })
-          }
-          throw error
-        }
-      },
-    },
+    // NON usare custom fetch: restituire response fake per AbortError corrompeva
+    // la cache e causava falsi "successi" con dati vuoti.
+    // Gli AbortError sono già soppressi in console dall'unhandledrejection handler.
   })
 
   // Salva nel global scope solo lato browser

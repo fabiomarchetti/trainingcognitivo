@@ -15,6 +15,7 @@ import {
   Type, Image as ImageIcon, Grid3x3, AlertCircle, LogIn
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/hooks/useAuth'
 import type { EsercizioCategoria, RisultatoClick } from '../types'
 
 interface Utente { id: string; nome: string; cognome: string }
@@ -41,7 +42,11 @@ export default function EsercizioPage() {
 }
 
 function EsercizioContent() {
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
+  const { user, isLoading: isAuthLoading } = useAuth()
+  const isLoadingRef = useRef(false)
+  const hasLoadedRef = useRef(false)
   const searchParams = useSearchParams()
   const utenteParam = searchParams.get('utente')
 
@@ -129,8 +134,14 @@ function EsercizioContent() {
     }
   }, [])
 
-  // Init
-  useEffect(() => { loadCurrentUser() }, [])
+  // Init: aspetta che l'autenticazione sia completata
+  useEffect(() => {
+    if (isAuthLoading) return
+    if (!user) { setAuthError(true); return }
+    if (!hasLoadedRef.current) {
+      loadCurrentUser()
+    }
+  }, [isAuthLoading, user])
 
   const speak = (text: string) => {
     if (!synthRef.current) return
@@ -143,35 +154,44 @@ function EsercizioContent() {
   }
 
   const loadCurrentUser = async () => {
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (!user || error) { setAuthError(true); return }
+    if (isLoadingRef.current) return
+    if (!user) return
+    isLoadingRef.current = true
 
-    if (utenteParam) {
+    try {
+      if (utenteParam) {
+        const { data: profile } = await supabase
+          .from('profiles').select('id, nome, cognome').eq('id', utenteParam).single()
+        if (profile) {
+          setSelectedUserId(profile.id)
+          setSelectedUserName(`${profile.nome} ${profile.cognome}`)
+          setUtenti([{ id: profile.id, nome: profile.nome || '', cognome: profile.cognome || '' }])
+          loadPreferences(profile.id)
+          await loadEsercizi(profile.id)
+        }
+        hasLoadedRef.current = true
+        return
+      }
+
       const { data: profile } = await supabase
-        .from('profiles').select('id, nome, cognome').eq('id', utenteParam).single()
+        .from('profiles').select('id, nome, cognome, id_ruolo, ruoli(codice)').eq('id', user.id).single()
       if (profile) {
-        setSelectedUserId(profile.id)
-        setSelectedUserName(`${profile.nome} ${profile.cognome}`)
-        setUtenti([{ id: profile.id, nome: profile.nome || '', cognome: profile.cognome || '' }])
-        loadPreferences(profile.id)
-        await loadEsercizi(profile.id)
+        const ruolo = (profile.ruoli as any)?.codice || 'utente'
+        if (ruolo === 'utente') {
+          setSelectedUserId(profile.id)
+          setSelectedUserName(`${profile.nome} ${profile.cognome}`)
+          setUtenti([{ id: profile.id, nome: profile.nome || '', cognome: profile.cognome || '' }])
+          loadPreferences(profile.id)
+          await loadEsercizi(profile.id)
+        } else {
+          await loadUtentiConEsercizi()
+        }
       }
-      return
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles').select('id, nome, cognome, id_ruolo, ruoli(codice)').eq('id', user.id).single()
-    if (profile) {
-      const ruolo = (profile.ruoli as any)?.codice || 'utente'
-      if (ruolo === 'utente') {
-        setSelectedUserId(profile.id)
-        setSelectedUserName(`${profile.nome} ${profile.cognome}`)
-        setUtenti([{ id: profile.id, nome: profile.nome || '', cognome: profile.cognome || '' }])
-        loadPreferences(profile.id)
-        await loadEsercizi(profile.id)
-      } else {
-        await loadUtentiConEsercizi()
-      }
+      hasLoadedRef.current = true
+    } catch (err) {
+      console.error('Errore caricamento utente:', err)
+    } finally {
+      isLoadingRef.current = false
     }
   }
 

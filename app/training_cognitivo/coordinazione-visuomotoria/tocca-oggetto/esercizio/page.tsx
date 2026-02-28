@@ -148,8 +148,8 @@ function GameContent() {
   const [gameState, setGameState] = useState<'idle' | 'running' | 'ended'>('idle')
   const [scoreTarget, setScoreTarget] = useState(0)
   const [scoreErrori, setScoreErrori] = useState(0)
-  // Feedback immediato nel header
-  const [feedback, setFeedback] = useState<'target' | 'distractor' | null>(null)
+  // Feedback immediato — DOM diretto (bypassa React batching in produzione)
+  const feedbackRef = useRef<HTMLDivElement>(null)
   const feedbackTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Refs game loop
@@ -249,8 +249,22 @@ function GameContent() {
 
   const showFeedback = (type: 'target' | 'distractor') => {
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
-    setFeedback(type)
-    feedbackTimerRef.current = setTimeout(() => setFeedback(null), 700)
+    const el = feedbackRef.current
+    if (!el) return
+    // Manipolazione DOM diretta — nessun re-render React necessario
+    el.textContent = type === 'target' ? '✓  BRAVO!' : '✗  NO!'
+    el.style.background = type === 'target' ? '#10b981' : '#ef4444'
+    el.style.display = 'flex'
+    el.style.opacity = '1'
+    el.style.transform = 'scale(1.1)'
+    setTimeout(() => { if (feedbackRef.current) el.style.transform = 'scale(1)' }, 100)
+    feedbackTimerRef.current = setTimeout(() => {
+      if (feedbackRef.current) {
+        el.style.opacity = '0'
+        el.style.transform = 'scale(0.8)'
+        setTimeout(() => { if (feedbackRef.current) el.style.display = 'none' }, 200)
+      }
+    }, 700)
   }
 
   const handleObjectClick = async (obj: GameObject) => {
@@ -344,7 +358,7 @@ function GameContent() {
 
     // Reset
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current)
-    setFeedback(null)
+    if (feedbackRef.current) { feedbackRef.current.style.display = 'none'; feedbackRef.current.style.opacity = '0' }
     gameObjectsRef.current.forEach(o => o.remove())
     gameObjectsRef.current = []
     scoreTargetRef.current = 0
@@ -442,18 +456,25 @@ function GameContent() {
               </div>
             </div>
 
-            {/* Feedback immediato */}
-            <div className="w-28 flex items-center justify-center">
-              {feedback === 'target' && (
-                <div className="flex items-center gap-1 bg-emerald-500 text-white font-black text-lg px-4 py-1 rounded-full shadow-lg animate-bounce">
-                  <CheckCircle className="h-5 w-5" /> BRAVO!
-                </div>
-              )}
-              {feedback === 'distractor' && (
-                <div className="flex items-center gap-1 bg-red-500 text-white font-black text-lg px-4 py-1 rounded-full shadow-lg animate-pulse">
-                  <XCircle className="h-5 w-5" /> NO!
-                </div>
-              )}
+            {/* Feedback immediato — DOM diretto, stabile in produzione */}
+            <div className="w-32 flex items-center justify-center">
+              <div
+                ref={feedbackRef}
+                style={{
+                  display: 'none',
+                  opacity: 0,
+                  alignItems: 'center',
+                  color: 'white',
+                  fontWeight: 900,
+                  fontSize: '1.1rem',
+                  padding: '4px 14px',
+                  borderRadius: '9999px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                  whiteSpace: 'nowrap',
+                  transition: 'opacity 0.2s ease, transform 0.15s ease',
+                  letterSpacing: '0.02em',
+                }}
+              />
             </div>
 
             {/* Start/Stop */}

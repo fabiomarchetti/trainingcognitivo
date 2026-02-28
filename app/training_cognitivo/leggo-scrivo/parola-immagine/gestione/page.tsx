@@ -9,7 +9,7 @@
  */
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import {
   Home, ArrowLeft, RotateCcw, Settings, Search,
@@ -17,11 +17,15 @@ import {
   Play, Type
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/hooks/useAuth'
 import type { Coppia } from '../types'
 
 // ARASAAC API
 const ARASAAC_API = 'https://api.arasaac.org/api'
 const ARASAAC_STATIC = 'https://static.arasaac.org/pictograms'
+
+// Ruoli staff che possono vedere tutti gli utenti
+const RUOLI_STAFF = ['sviluppatore', 'amministratore', 'direttore', 'casemanager']
 
 interface Pittogramma {
   id: number
@@ -36,7 +40,16 @@ interface Utente {
 }
 
 export default function GestionePage() {
-  const supabase = createClient()
+  // Client Supabase stabile con useRef
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
+
+  // Hook autenticazione
+  const { user, isLoading: isAuthLoading } = useAuth()
+
+  // Refs per evitare chiamate concorrenti e ricaricamenti
+  const isLoadingRef = useRef(false)
+  const hasLoadedRef = useRef(false)
 
   // Stato utente
   const [utenti, setUtenti] = useState<Utente[]>([])
@@ -66,10 +79,15 @@ export default function GestionePage() {
   // Toast
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null)
 
-  // Carica utenti all'avvio
+  // Carica utenti e dati iniziali quando auth è pronta
   useEffect(() => {
-    loadCurrentUser()
-  }, [])
+    if (isAuthLoading) return
+    if (!user) return
+
+    if (!hasLoadedRef.current) {
+      loadCurrentUser()
+    }
+  }, [isAuthLoading, user])
 
   // Carica dati quando si seleziona un utente
   useEffect(() => {
@@ -109,18 +127,23 @@ export default function GestionePage() {
 
   // Carica utente corrente e lista utenti
   const loadCurrentUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    if (isLoadingRef.current) return
     if (!user) return
 
-    // Ottieni profilo con JOIN sulla tabella ruoli
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, nome, cognome, id_ruolo, ruoli(codice)')
-      .eq('id', user.id)
-      .single()
+    isLoadingRef.current = true
 
-    if (profile) {
-      const ruoloCodice = (profile.ruoli as any)?.codice || ''
+    try {
+      // Ottieni profilo con JOIN sulla tabella ruoli
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, nome, cognome, id_ruolo, ruoli(codice)')
+        .eq('id', user.id)
+        .single()
+
+      if (profileError) throw profileError
+      if (!profile) return
+
+      const ruoloCodice = (profile.ruoli as any)?.codice || 'utente'
       setCurrentUserRole(ruoloCodice)
 
       // Se utente normale, mostra solo se stesso
@@ -128,20 +151,26 @@ export default function GestionePage() {
         setSelectedUserId(profile.id)
         setSelectedUserName(`${profile.nome} ${profile.cognome}`)
         setUtenti([{ id: profile.id, nome: profile.nome || '', cognome: profile.cognome || '' }])
-      } else {
-        // Educatore/admin: carica lista utenti
-        await loadUtenti(ruoloCodice)
-        // Preseleziona se stesso come educatore
-        setSelectedUserId(profile.id)
-        setSelectedUserName(`${profile.nome} ${profile.cognome}`)
       }
+      // Se staff (sviluppatore, admin, direttore, casemanager), carica tutti gli utenti
+      else if (RUOLI_STAFF.includes(ruoloCodice)) {
+        await loadUtentiByRole()
+      }
+      // Se educatore, carica solo utenti assegnati
+      else if (ruoloCodice === 'educatore') {
+        await loadUtentiAssegnati()
+      }
+
+      hasLoadedRef.current = true
+    } catch (err) {
+      console.error('Errore caricamento utente corrente:', err)
+    } finally {
+      isLoadingRef.current = false
     }
   }
 
-  const loadUtenti = async (ruoloCodice: string) => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
+  // Carica tutti gli utenti con ruolo "utente" (per staff)
+  const loadUtentiByRole = async () => {
     // Prima ottieni l'ID del ruolo "utente"
     const { data: ruoloUtente } = await supabase
       .from('ruoli')
@@ -155,18 +184,51 @@ export default function GestionePage() {
     }
 
     // Carica solo profili con ruolo "utente"
-    const { data: profiles } = await supabase
+    const { data: profiles, error: profError } = await supabase
       .from('profiles')
       .select('id, nome, cognome')
       .eq('id_ruolo', ruoloUtente.id)
       .order('cognome')
 
-    if (profiles) {
-      setUtenti(profiles.map(p => ({
+    if (profError) throw profError
+
+    setUtenti((profiles || []).map(p => ({
+      id: p.id,
+      nome: p.nome || '',
+      cognome: p.cognome || ''
+    })))
+  }
+
+  // Carica solo utenti assegnati all'educatore
+  const loadUtentiAssegnati = async () => {
+    if (!user) return
+
+    const { data: assegnazioni, error: assError } = await supabase
+      .from('educatori_utenti')
+      .select('id_utente')
+      .eq('id_educatore', user.id)
+      .eq('stato', 'attivo')
+
+    if (assError) throw assError
+
+    if (assegnazioni && assegnazioni.length > 0) {
+      const utentiIds = assegnazioni.map(a => a.id_utente)
+
+      const { data: profiles, error: profError } = await supabase
+        .from('profiles')
+        .select('id, nome, cognome')
+        .in('id', utentiIds)
+        .order('cognome')
+
+      if (profError) throw profError
+
+      setUtenti((profiles || []).map(p => ({
         id: p.id,
         nome: p.nome || '',
         cognome: p.cognome || ''
       })))
+    } else {
+      setUtenti([])
     }
   }
 
@@ -269,8 +331,6 @@ export default function GestionePage() {
       showToast('Seleziona sia target che distrattore', 'warning')
       return
     }
-
-    const { data: { user } } = await supabase.auth.getUser()
 
     try {
       const res = await fetch('/api/esercizi/parola-immagine', {

@@ -941,15 +941,11 @@ function EsercizioContent() {
       {/* Menu Impostazioni */}
       {showSettingsMenu && (
         <>
-          {/* Overlay */}
           <div
-            className="fixed inset-0 bg-black/30 z-40"
+            className="fixed inset-0 bg-black/50 z-50"
             onClick={() => setShowSettingsMenu(false)}
           />
-
-          {/* Menu laterale */}
-          <div className="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 overflow-y-auto">
-            {/* Header menu */}
+          <div className="fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl z-50 overflow-y-auto">
             <div className="bg-gradient-to-r from-orange-500 to-amber-500 p-4 flex items-center justify-between">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Settings className="h-5 w-5" />
@@ -957,92 +953,78 @@ function EsercizioContent() {
               </h3>
               <button
                 onClick={() => setShowSettingsMenu(false)}
-                className="p-1 bg-white/20 rounded-full hover:bg-white/30"
+                className="p-2 bg-white/20 rounded-full hover:bg-white/30"
               >
                 <X className="h-5 w-5 text-white" />
               </button>
             </div>
 
             <div className="p-4 space-y-6">
-              {/* Sezione Font */}
-              <div className="space-y-4">
-                <h4 className="font-bold text-gray-700 flex items-center gap-2 border-b pb-2">
-                  <Type className="h-5 w-5 text-orange-500" />
-                  Testo Parola
-                </h4>
-
-                {/* Dimensione font */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-2">
-                    Dimensione: {fontSize}px
-                  </label>
+              {/* Grandezza Testo */}
+              <div className="border-b pb-4">
+                <label className="flex items-center gap-2 font-semibold text-gray-700 mb-2">
+                  <Type className="h-4 w-4 text-orange-500" />
+                  Grandezza Testo
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">A</span>
                   <input
                     type="range"
                     min="24"
                     max="72"
                     value={fontSize}
                     onChange={(e) => setFontSize(Number(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                    className="flex-1 accent-orange-500"
                   />
-                  <div className="flex justify-between text-xs text-gray-400 mt-1">
-                    <span>Piccolo</span>
-                    <span>Grande</span>
-                  </div>
+                  <span className="text-lg font-bold">A</span>
                 </div>
+                <div className="text-xs text-gray-400 text-center mt-1">{fontSize}px</div>
+              </div>
 
-                {/* Colore font */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-2">
-                    Colore testo
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {availableColors.map((color) => (
-                      <button
-                        key={`font-${color.value}`}
-                        onClick={() => setFontColor(color.value)}
-                        className={`w-10 h-10 rounded-lg border-2 transition-all ${
-                          fontColor === color.value ? 'ring-2 ring-orange-500 ring-offset-2' : 'border-gray-300'
-                        }`}
-                        style={{ backgroundColor: color.value }}
-                        title={color.name}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Sfondo box parola */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-2">
-                    Sfondo box parola
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {availableColors.map((color) => (
-                      <button
-                        key={`fontbg-${color.value}`}
-                        onClick={() => setFontBgColor(color.value)}
-                        className={`w-10 h-10 rounded-lg border-2 transition-all ${
-                          fontBgColor === color.value ? 'ring-2 ring-orange-500 ring-offset-2' : 'border-gray-300'
-                        }`}
-                        style={{ backgroundColor: color.value }}
-                        title={color.name}
-                      />
-                    ))}
-                  </div>
+              {/* Colore Testo */}
+              <div className="border-b pb-4">
+                <label className="flex items-center gap-2 font-semibold text-gray-700 mb-2">
+                  Colore Testo
+                </label>
+                <div className="grid grid-cols-6 gap-2">
+                  {availableColors.map((color) => (
+                    <button
+                      key={`font-${color.value}`}
+                      onClick={() => setFontColor(color.value)}
+                      className={`w-full aspect-square rounded-lg border-2 transition-all ${fontColor === color.value ? 'border-orange-500 ring-2 ring-orange-200' : 'border-gray-300'}`}
+                      style={{ backgroundColor: color.value }}
+                      title={color.name}
+                    />
+                  ))}
                 </div>
               </div>
 
-              {/* Sezione Immagini */}
-              <div className="space-y-4">
-                <h4 className="font-bold text-gray-700 flex items-center gap-2 border-b pb-2">
-                  <ImageIcon className="h-5 w-5 text-orange-500" />
-                  Immagini
-                </h4>
+              {/* Sfondo Testo */}
+              <div className="border-b pb-4">
+                <label className="flex items-center gap-2 font-semibold text-gray-700 mb-2">
+                  Sfondo Testo
+                </label>
+                <div className="grid grid-cols-6 gap-2">
+                  {availableColors.map((color) => (
+                    <button
+                      key={`fontbg-${color.value}`}
+                      onClick={() => setFontBgColor(color.value)}
+                      className={`w-full aspect-square rounded-lg border-2 transition-all ${fontBgColor === color.value ? 'border-orange-500 ring-2 ring-orange-200' : 'border-gray-300'}`}
+                      style={{ backgroundColor: color.value }}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+              </div>
 
-                {/* Dimensione immagine */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-2">
-                    Dimensione: {imageSize}px
-                  </label>
+              {/* Grandezza Immagini */}
+              <div className="border-b pb-4">
+                <label className="flex items-center gap-2 font-semibold text-gray-700 mb-2">
+                  <ImageIcon className="h-4 w-4 text-orange-500" />
+                  Grandezza Immagini
+                </label>
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4 text-gray-400" />
                   <input
                     type="range"
                     min="120"
@@ -1050,41 +1032,37 @@ function EsercizioContent() {
                     step="20"
                     value={imageSize}
                     onChange={(e) => setImageSize(Number(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                    className="flex-1 accent-orange-500"
                   />
-                  <div className="flex justify-between text-xs text-gray-400 mt-1">
-                    <span>Piccola</span>
-                    <span>Grande</span>
-                  </div>
+                  <ImageIcon className="h-6 w-6 text-gray-400" />
                 </div>
+                <div className="text-xs text-gray-400 text-center mt-1">{imageSize}px</div>
+              </div>
 
-                {/* Sfondo box immagini */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-2">
-                    Sfondo box immagini
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {availableColors.map((color) => (
-                      <button
-                        key={`imgbg-${color.value}`}
-                        onClick={() => setImageBgColor(color.value)}
-                        className={`w-10 h-10 rounded-lg border-2 transition-all ${
-                          imageBgColor === color.value ? 'ring-2 ring-orange-500 ring-offset-2' : 'border-gray-300'
-                        }`}
-                        style={{ backgroundColor: color.value }}
-                        title={color.name}
-                      />
-                    ))}
-                  </div>
+              {/* Sfondo Immagini */}
+              <div className="border-b pb-4">
+                <label className="flex items-center gap-2 font-semibold text-gray-700 mb-2">
+                  Sfondo Immagini
+                </label>
+                <div className="grid grid-cols-6 gap-2">
+                  {availableColors.map((color) => (
+                    <button
+                      key={`imgbg-${color.value}`}
+                      onClick={() => setImageBgColor(color.value)}
+                      className={`w-full aspect-square rounded-lg border-2 transition-all ${imageBgColor === color.value ? 'border-orange-500 ring-2 ring-orange-200' : 'border-gray-300'}`}
+                      style={{ backgroundColor: color.value }}
+                      title={color.name}
+                    />
+                  ))}
                 </div>
               </div>
 
               {/* Anteprima */}
-              <div className="space-y-2 pt-4 border-t">
-                <h4 className="font-bold text-gray-700 text-sm">Anteprima</h4>
+              <div className="border-b pb-4">
+                <label className="font-semibold text-gray-700 mb-2 block">Anteprima</label>
                 <div className="flex gap-2">
                   <div
-                    className="flex-1 rounded-lg p-3 flex items-center justify-center"
+                    className="flex-1 rounded-lg p-3 flex items-center justify-center border"
                     style={{ backgroundColor: fontBgColor }}
                   >
                     <span
@@ -1095,7 +1073,7 @@ function EsercizioContent() {
                     </span>
                   </div>
                   <div
-                    className="flex-1 rounded-lg p-3 flex items-center justify-center"
+                    className="flex-1 rounded-lg p-3 flex items-center justify-center border"
                     style={{ backgroundColor: imageBgColor }}
                   >
                     <ImageIcon className="h-8 w-8 text-gray-400" />

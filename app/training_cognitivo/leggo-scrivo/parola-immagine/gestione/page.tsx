@@ -133,32 +133,25 @@ export default function GestionePage() {
     isLoadingRef.current = true
 
     try {
-      // Ottieni profilo con JOIN sulla tabella ruoli
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, nome, cognome, id_ruolo, ruoli(codice)')
-        .eq('id', user.id)
-        .single()
+      // Usa la nuova API che bypassa RLS
+      const res = await fetch('/api/utenti/lista')
+      const data = await res.json()
 
-      if (profileError) throw profileError
-      if (!profile) return
-
-      const ruoloCodice = (profile.ruoli as any)?.codice || 'utente'
-      setCurrentUserRole(ruoloCodice)
-
-      // Se utente normale, mostra solo se stesso
-      if (ruoloCodice === 'utente') {
-        setSelectedUserId(profile.id)
-        setSelectedUserName(`${profile.nome} ${profile.cognome}`)
-        setUtenti([{ id: profile.id, nome: profile.nome || '', cognome: profile.cognome || '' }])
+      if (!data.success) {
+        console.error('Errore API utenti:', data.message)
+        return
       }
-      // Se staff (sviluppatore, admin, direttore, casemanager), carica tutti gli utenti
-      else if (RUOLI_STAFF.includes(ruoloCodice)) {
-        await loadUtentiByRole()
-      }
-      // Se educatore, carica solo utenti assegnati
-      else if (ruoloCodice === 'educatore') {
-        await loadUtentiAssegnati()
+
+      const utentiList = data.data || []
+      setUtenti(utentiList.map((p: any) => ({ id: p.id, nome: p.nome || '', cognome: p.cognome || '' })))
+
+      // Se c'è un solo utente, selezionalo automaticamente (caso utente normale)
+      if (utentiList.length === 1) {
+        setSelectedUserId(utentiList[0].id)
+        setSelectedUserName(`${utentiList[0].nome} ${utentiList[0].cognome}`)
+        setCurrentUserRole('utente')
+      } else {
+        setCurrentUserRole('staff')
       }
 
       hasLoadedRef.current = true
@@ -166,69 +159,6 @@ export default function GestionePage() {
       console.error('Errore caricamento utente corrente:', err)
     } finally {
       isLoadingRef.current = false
-    }
-  }
-
-  // Carica tutti gli utenti con ruolo "utente" (per staff)
-  const loadUtentiByRole = async () => {
-    // Prima ottieni l'ID del ruolo "utente"
-    const { data: ruoloUtente } = await supabase
-      .from('ruoli')
-      .select('id')
-      .eq('codice', 'utente')
-      .single()
-
-    if (!ruoloUtente) {
-      console.error('Ruolo utente non trovato')
-      return
-    }
-
-    // Carica solo profili con ruolo "utente"
-    const { data: profiles, error: profError } = await supabase
-      .from('profiles')
-      .select('id, nome, cognome')
-      .eq('id_ruolo', ruoloUtente.id)
-      .order('cognome')
-
-    if (profError) throw profError
-
-    setUtenti((profiles || []).map(p => ({
-      id: p.id,
-      nome: p.nome || '',
-      cognome: p.cognome || ''
-    })))
-  }
-
-  // Carica solo utenti assegnati all'educatore
-  const loadUtentiAssegnati = async () => {
-    if (!user) return
-
-    const { data: assegnazioni, error: assError } = await supabase
-      .from('educatori_utenti')
-      .select('id_utente')
-      .eq('id_educatore', user.id)
-      .eq('stato', 'attivo')
-
-    if (assError) throw assError
-
-    if (assegnazioni && assegnazioni.length > 0) {
-      const utentiIds = assegnazioni.map(a => a.id_utente)
-
-      const { data: profiles, error: profError } = await supabase
-        .from('profiles')
-        .select('id, nome, cognome')
-        .in('id', utentiIds)
-        .order('cognome')
-
-      if (profError) throw profError
-
-      setUtenti((profiles || []).map(p => ({
-        id: p.id,
-        nome: p.nome || '',
-        cognome: p.cognome || ''
-      })))
-    } else {
-      setUtenti([])
     }
   }
 

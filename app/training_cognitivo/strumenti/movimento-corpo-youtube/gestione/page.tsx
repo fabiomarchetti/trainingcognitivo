@@ -144,59 +144,34 @@ export default function GestioneMovimentoCorpoPage() {
     if (isLoadingRef.current) return
     if (!user) return
     isLoadingRef.current = true
-    console.log('[MCYT GESTIONE] loadCurrentUser start, user.id:', user.id)
+    console.log('[MCYT GESTIONE] loadCurrentUser start')
     try {
-      const { data: profile, error } = await supabase
-        .from('profiles').select('id, nome, cognome, id_ruolo, ruoli(codice)')
-        .eq('id', user.id).single()
-      if (error) {
-        console.error('[MCYT GESTIONE] Errore query profilo:', error)
-        throw error
-      }
-      if (!profile) {
-        console.warn('[MCYT GESTIONE] Profilo non trovato per user.id:', user.id)
+      // Usa la nuova API che bypassa RLS
+      const res = await fetch('/api/utenti/lista')
+      const data = await res.json()
+
+      if (!data.success) {
+        console.error('[MCYT GESTIONE] Errore API utenti:', data.message)
         return
       }
-      const ruolo = (profile.ruoli as any)?.codice || 'utente'
-      console.log('[MCYT GESTIONE] Ruolo:', ruolo)
-      setCurrentUserRole(ruolo)
-      if (ruolo === 'utente') {
-        setSelectedUserId(profile.id)
-        setSelectedUserName(`${profile.nome} ${profile.cognome}`)
-        setUtenti([{ id: profile.id, nome: profile.nome || '', cognome: profile.cognome || '' }])
-      } else if (RUOLI_STAFF.includes(ruolo)) {
-        await loadUtentiByRole()
-      } else if (ruolo === 'educatore') {
-        await loadUtentiAssegnati()
+
+      const utentiList = data.data || []
+      console.log('[MCYT GESTIONE] Utenti caricati:', utentiList.length)
+      setUtenti(utentiList.map((p: any) => ({ id: p.id, nome: p.nome || '', cognome: p.cognome || '' })))
+
+      // Se c'è un solo utente, selezionalo automaticamente (caso utente normale)
+      if (utentiList.length === 1) {
+        setSelectedUserId(utentiList[0].id)
+        setSelectedUserName(`${utentiList[0].nome} ${utentiList[0].cognome}`)
+        setCurrentUserRole('utente')
+      } else {
+        setCurrentUserRole('staff')
       }
+
       hasLoadedRef.current = true
       console.log('[MCYT GESTIONE] loadCurrentUser completato')
     } catch (err) { console.error('[MCYT GESTIONE] Errore loadCurrentUser:', err) }
     finally { isLoadingRef.current = false }
-  }
-
-  const loadUtentiByRole = async () => {
-    console.log('[MCYT GESTIONE] loadUtentiByRole start')
-    const { data: ruoloUtente, error: errRuolo } = await supabase.from('ruoli').select('id').eq('codice', 'utente').single()
-    if (errRuolo) { console.error('[MCYT GESTIONE] Errore query ruoli:', errRuolo); throw errRuolo }
-    if (!ruoloUtente) { console.warn('[MCYT GESTIONE] Ruolo utente non trovato'); return }
-    console.log('[MCYT GESTIONE] Ruolo utente id:', ruoloUtente.id)
-
-    const { data: profiles, error: errProf } = await supabase.from('profiles').select('id, nome, cognome').eq('id_ruolo', ruoloUtente.id).order('cognome')
-    if (errProf) { console.error('[MCYT GESTIONE] Errore query profiles:', errProf); throw errProf }
-    console.log('[MCYT GESTIONE] Profili caricati:', profiles?.length || 0)
-    setUtenti((profiles || []).map(p => ({ id: p.id, nome: p.nome || '', cognome: p.cognome || '' })))
-  }
-
-  const loadUtentiAssegnati = async () => {
-    if (!user) return
-    const { data: ass, error: errAss } = await supabase.from('educatori_utenti').select('id_utente').eq('id_educatore', user.id).eq('stato', 'attivo')
-    if (errAss) { console.error('[MCYT GESTIONE] Errore assegnazioni:', errAss); throw errAss }
-    if (ass && ass.length > 0) {
-      const { data: profiles, error: errProf } = await supabase.from('profiles').select('id, nome, cognome').in('id', ass.map(a => a.id_utente)).order('cognome')
-      if (errProf) { console.error('[MCYT GESTIONE] Errore profiles assegnati:', errProf); throw errProf }
-      setUtenti((profiles || []).map(p => ({ id: p.id, nome: p.nome || '', cognome: p.cognome || '' })))
-    } else { setUtenti([]) }
   }
 
   const loadConfig = async () => {

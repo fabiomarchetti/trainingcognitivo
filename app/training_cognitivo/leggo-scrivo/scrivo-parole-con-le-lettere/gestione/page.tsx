@@ -98,66 +98,33 @@ export default function GestionePage() {
     setTimeout(() => setToast(null), 3000)
   }
 
-  // Carica utente corrente e lista utenti
+  // Carica utenti tramite API (bypassa RLS)
   const loadCurrentUser = async () => {
     setIsLoadingUser(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setIsLoadingUser(false)
+      const res = await fetch('/api/utenti/lista')
+      const data = await res.json()
+
+      if (!data.success) {
+        console.error('[Gestione] Errore API utenti:', data.message)
         return
       }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id, nome, cognome, id_ruolo, ruoli(codice)')
-        .eq('id', user.id)
-        .single()
+      const utentiList = data.data || []
+      setUtenti(utentiList.map((p: any) => ({ id: p.id, nome: p.nome || '', cognome: p.cognome || '' })))
 
-      if (profile) {
-        const ruoloCodice = (profile.ruoli as any)?.codice || ''
-        setCurrentUserRole(ruoloCodice)
-
-        if (ruoloCodice === 'utente') {
-          setSelectedUserId(profile.id)
-          setSelectedUserName(`${profile.nome} ${profile.cognome}`)
-          setUtenti([{ id: profile.id, nome: profile.nome || '', cognome: profile.cognome || '' }])
-        } else {
-          await loadUtenti()
-        }
+      // Se c'è un solo utente, selezionalo automaticamente (caso utente normale)
+      if (utentiList.length === 1) {
+        setSelectedUserId(utentiList[0].id)
+        setSelectedUserName(`${utentiList[0].nome} ${utentiList[0].cognome}`)
+        setCurrentUserRole('utente')
+      } else {
+        setCurrentUserRole('staff')
       }
     } catch (error) {
       console.error('[Gestione] Errore caricamento utente:', error)
     } finally {
       setIsLoadingUser(false)
-    }
-  }
-
-  const loadUtenti = async () => {
-    try {
-      const { data: ruoloUtente } = await supabase
-        .from('ruoli')
-        .select('id')
-        .eq('codice', 'utente')
-        .single()
-
-      if (!ruoloUtente) return
-
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, nome, cognome')
-        .eq('id_ruolo', ruoloUtente.id)
-        .order('cognome')
-
-      if (profiles) {
-        setUtenti(profiles.map(p => ({
-          id: p.id,
-          nome: p.nome || '',
-          cognome: p.cognome || ''
-        })))
-      }
-    } catch (error) {
-      console.error('[Gestione] Errore caricamento utenti:', error)
     }
   }
 

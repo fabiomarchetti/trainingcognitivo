@@ -83,45 +83,32 @@ export default function GestioneToccaOggettoPage() {
     if (!user) return
     isLoadingRef.current = true
     try {
-      const { data: profile, error } = await supabase
-        .from('profiles').select('id, nome, cognome, id_ruolo, ruoli(codice)').eq('id', user.id).single()
-      if (error) throw error
-      if (!profile) return
-      const ruolo = (profile.ruoli as any)?.codice || 'utente'
-      setCurrentUserRole(ruolo)
-      if (ruolo === 'utente') {
-        setSelectedUserId(profile.id)
-        setSelectedUserName(`${profile.nome} ${profile.cognome}`)
-        setUtenti([{ id: profile.id, nome: profile.nome || '', cognome: profile.cognome || '' }])
-      } else if (RUOLI_STAFF.includes(ruolo)) {
-        await loadUtentiByRole()
-      } else if (ruolo === 'educatore') {
-        await loadUtentiAssegnati()
+      // Usa la nuova API che bypassa RLS
+      const res = await fetch('/api/utenti/lista')
+      const data = await res.json()
+
+      if (!data.success) {
+        console.error('Errore API utenti:', data.message)
+        return
       }
+
+      const utentiList = data.data || []
+      setUtenti(utentiList.map((p: any) => ({ id: p.id, nome: p.nome || '', cognome: p.cognome || '' })))
+
+      // Se c'è un solo utente, selezionalo automaticamente (caso utente normale)
+      if (utentiList.length === 1) {
+        setSelectedUserId(utentiList[0].id)
+        setSelectedUserName(`${utentiList[0].nome} ${utentiList[0].cognome}`)
+        setCurrentUserRole('utente')
+      } else {
+        setCurrentUserRole('staff')
+      }
+
       hasLoadedRef.current = true
     } catch (err) {
       console.error('Errore:', err)
     } finally {
       isLoadingRef.current = false
-    }
-  }
-
-  const loadUtentiByRole = async () => {
-    const { data: ruoloUtente } = await supabase.from('ruoli').select('id').eq('codice', 'utente').single()
-    if (!ruoloUtente) return
-    const { data: profiles } = await supabase.from('profiles').select('id, nome, cognome').eq('id_ruolo', ruoloUtente.id).order('cognome')
-    setUtenti((profiles || []).map(p => ({ id: p.id, nome: p.nome || '', cognome: p.cognome || '' })))
-  }
-
-  const loadUtentiAssegnati = async () => {
-    if (!user) return
-    const { data: ass } = await supabase.from('educatori_utenti').select('id_utente').eq('id_educatore', user.id).eq('stato', 'attivo')
-    if (ass && ass.length > 0) {
-      const ids = ass.map(a => a.id_utente)
-      const { data: profiles } = await supabase.from('profiles').select('id, nome, cognome').in('id', ids).order('cognome')
-      setUtenti((profiles || []).map(p => ({ id: p.id, nome: p.nome || '', cognome: p.cognome || '' })))
-    } else {
-      setUtenti([])
     }
   }
 

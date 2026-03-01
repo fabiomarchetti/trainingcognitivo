@@ -18,8 +18,10 @@ import {
   Loader2,
   X,
   Upload,
-  User
+  User,
+  FileDown
 } from 'lucide-react'
+import { jsPDF } from 'jspdf'
 
 interface Richiedente {
   id: string
@@ -154,6 +156,97 @@ export default function RichiediEsercizioPage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  // Genera PDF della richiesta
+  const generatePDF = () => {
+    const doc = new jsPDF()
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const margin = 20
+    const maxWidth = pageWidth - margin * 2
+    let y = 20
+
+    // Funzione helper per aggiungere testo con word wrap
+    const addText = (text: string, fontSize: number = 12, isBold: boolean = false) => {
+      doc.setFontSize(fontSize)
+      doc.setFont('helvetica', isBold ? 'bold' : 'normal')
+      const lines = doc.splitTextToSize(text, maxWidth)
+
+      // Controlla se serve una nuova pagina
+      if (y + (lines.length * fontSize * 0.5) > 280) {
+        doc.addPage()
+        y = 20
+      }
+
+      doc.text(lines, margin, y)
+      y += lines.length * fontSize * 0.5 + 5
+    }
+
+    // Funzione per aggiungere una sezione
+    const addSection = (title: string, content: string) => {
+      if (y > 250) {
+        doc.addPage()
+        y = 20
+      }
+      addText(title, 14, true)
+      if (content && content.trim()) {
+        addText(content, 11)
+      } else {
+        addText('Non specificato', 11)
+      }
+      y += 5
+    }
+
+    // Titolo
+    doc.setFontSize(20)
+    doc.setFont('helvetica', 'bold')
+    doc.text('RICHIESTA NUOVO ESERCIZIO', pageWidth / 2, y, { align: 'center' })
+    y += 15
+
+    // Data
+    const dataOggi = new Date().toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    })
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Data: ${dataOggi}`, pageWidth / 2, y, { align: 'center' })
+    y += 15
+
+    // Richiedente
+    const richiedenteSelezionato = richiedenti.find(r => r.id === selectedRichiedente)
+    const nomeRichiedente = richiedenteSelezionato
+      ? `${richiedenteSelezionato.cognome} ${richiedenteSelezionato.nome} (${richiedenteSelezionato.ruolo})`
+      : 'Non selezionato'
+    addSection('RICHIEDENTE', nomeRichiedente)
+
+    // Linea separatrice
+    doc.setDrawColor(200)
+    doc.line(margin, y, pageWidth - margin, y)
+    y += 10
+
+    // Sezioni
+    addSection('OBIETTIVO DELL\'ESERCIZIO', obiettivo)
+    addSection('DESCRIZIONE DELL\'ESERCIZIO', descrizione)
+    addSection('CONTENUTI DELL\'ESERCIZIO', contenuti)
+    addSection('AZIONE PER ESITO POSITIVO', azioneUtente)
+    addSection('STATISTICHE DA ANALIZZARE', statistiche)
+
+    // Allegati
+    if (allegati.length > 0) {
+      addSection('ALLEGATI', allegati.map(a => `- ${a.nome}`).join('\n'))
+    }
+
+    // Footer
+    y = 285
+    doc.setFontSize(9)
+    doc.setTextColor(128)
+    doc.text('TrainingCognitivo - Richiesta Esercizio', pageWidth / 2, y, { align: 'center' })
+
+    // Salva il PDF
+    const nomeFile = `richiesta-esercizio-${new Date().toISOString().split('T')[0]}.pdf`
+    doc.save(nomeFile)
   }
 
   if (submitSuccess) {
@@ -381,24 +474,37 @@ export default function RichiediEsercizioPage() {
           </div>
         )}
 
-        {/* Submit */}
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 hover:from-violet-700 hover:to-purple-700 transition-all disabled:opacity-50 shadow-lg"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Invio in corso...
-            </>
-          ) : (
-            <>
-              <Send className="h-5 w-5" />
-              Invia Richiesta
-            </>
-          )}
-        </button>
+        {/* Bottoni */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Scarica PDF */}
+          <button
+            type="button"
+            onClick={generatePDF}
+            className="flex-1 py-4 bg-gray-100 text-gray-700 border-2 border-gray-300 rounded-xl font-bold text-lg flex items-center justify-center gap-2 hover:bg-gray-200 transition-all shadow-md"
+          >
+            <FileDown className="h-5 w-5" />
+            Scarica PDF
+          </button>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="flex-1 py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 hover:from-violet-700 hover:to-purple-700 transition-all disabled:opacity-50 shadow-lg"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Invio in corso...
+              </>
+            ) : (
+              <>
+                <Send className="h-5 w-5" />
+                Invia Richiesta
+              </>
+            )}
+          </button>
+        </div>
       </form>
     </div>
   )

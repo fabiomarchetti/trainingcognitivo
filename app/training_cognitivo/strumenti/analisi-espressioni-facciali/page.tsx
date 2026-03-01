@@ -8,7 +8,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Home, Download, ChevronLeft, Users } from 'lucide-react'
+import { Download, ChevronLeft, Users, RotateCcw } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import dynamic from 'next/dynamic'
 
 // Importa FaceTracker dinamicamente per evitare errori SSR
@@ -41,6 +42,7 @@ export default function AnalisiEspressioniFaccialiPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [showExercise, setShowExercise] = useState(false)
   const hasLoadedRef = useRef(false)
+  const supabaseRef = useRef(createClient())
 
   // Carica lista utenti tramite API (bypassa RLS)
   useEffect(() => {
@@ -94,9 +96,16 @@ export default function AnalisiEspressioniFaccialiPage() {
     setDeferredPrompt(null)
   }
 
-  // Torna alla home
-  const handleGoHome = () => {
-    window.location.href = '/training_cognitivo'
+  // Reset e torna al login
+  const handleGoHome = async () => {
+    await supabaseRef.current.auth.signOut()
+    if ('caches' in window) {
+      const cacheNames = await caches.keys()
+      await Promise.all(cacheNames.map(name => caches.delete(name)))
+    }
+    localStorage.clear()
+    sessionStorage.clear()
+    window.location.href = '/login'
   }
 
   // Avvia esercizio
@@ -142,10 +151,10 @@ export default function AnalisiEspressioniFaccialiPage() {
               <button
                 onClick={handleGoHome}
                 className="flex items-center gap-2 px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                title="Torna alla home"
+                title="Reset e Logout"
               >
-                <Home className="h-4 w-4" />
-                <span className="hidden sm:inline">Home</span>
+                <RotateCcw className="h-4 w-4" />
+                <span className="hidden sm:inline">Reset</span>
               </button>
             </div>
           </div>
@@ -273,9 +282,9 @@ export default function AnalisiEspressioniFaccialiPage() {
             <button
               onClick={handleGoHome}
               className="flex items-center gap-2 px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
-              title="Torna alla home"
+              title="Reset e Logout"
             >
-              <Home className="h-4 w-4" />
+              <RotateCcw className="h-4 w-4" />
             </button>
           </div>
         </div>

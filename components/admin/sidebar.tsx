@@ -22,7 +22,8 @@ import {
   KeyRound,
   X,
   Image,
-  Wrench
+  Wrench,
+  FilePlus
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/components/auth'
@@ -95,6 +96,11 @@ const menuItems: MenuItem[] = [
     label: 'Assegna Esercizi',
     href: '/admin/assegna-esercizi',
     icon: ClipboardList,
+  },
+  {
+    label: 'Richiedi Esercizio',
+    href: '/admin/richiedi-esercizio',
+    icon: FilePlus,
   },
   { type: 'divider' },
   {

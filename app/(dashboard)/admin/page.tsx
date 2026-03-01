@@ -14,7 +14,8 @@ import {
   FileText,
   RefreshCw,
   Shield,
-  Loader2
+  Loader2,
+  PlusCircle
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -194,6 +195,12 @@ export default function AdminPage() {
           color="green"
         />
         <QuickLinkCard
+          href="/admin/richiedi-esercizio"
+          title="Richiedi Esercizio"
+          description="Richiedi un nuovo esercizio"
+          color="violet"
+        />
+        <QuickLinkCard
           href="/admin/categorie"
           title="Categorie Esercizi"
           description="Gestisci le categorie"
@@ -297,6 +304,7 @@ function QuickLinkCard({
     orange: 'hover:border-orange-400 hover:bg-orange-50',
     pink: 'hover:border-pink-400 hover:bg-pink-50',
     teal: 'hover:border-teal-400 hover:bg-teal-50',
+    violet: 'hover:border-violet-400 hover:bg-violet-50',
   }
 
   const titleColors: Record<string, string> = {
@@ -306,6 +314,7 @@ function QuickLinkCard({
     orange: 'text-orange-600',
     pink: 'text-pink-600',
     teal: 'text-teal-600',
+    violet: 'text-violet-600',
   }
 
   return (

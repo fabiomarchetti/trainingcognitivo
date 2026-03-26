@@ -5,13 +5,14 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Puzzle, Plus, Pencil, Trash2, RefreshCw, AlertCircle, Play, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Puzzle, Plus, Pencil, Trash2, RefreshCw, AlertCircle, Play, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, Phone } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { dataCache } from '@/lib/cache/data-cache'
 import { useAuth } from '@/components/auth/auth-provider'
 import { StatusBadge } from '@/components/ui/badge'
 import { ConfirmModal } from '@/components/ui/modal'
 import { EsercizioModal } from '@/components/admin/esercizio-modal'
+import { useVideoCall, ContactList, HelpButton } from '@/components/videocall'
 import type { Esercizio, CategoriaEsercizi } from '@/lib/supabase/types'
 
 interface EsercizioWithCategoria extends Esercizio {
@@ -547,6 +548,56 @@ export default function EserciziPage() {
         confirmText="Elimina"
         variant="danger"
       />
+
+      {/* Pannello Rubrica Videocall (test) */}
+      <RubricaPanel />
+
+      {/* Bottone Chiedi Aiuto (test) */}
+      <HelpButton />
     </div>
+  )
+}
+
+/**
+ * Pannello laterale rubrica - componente interno per il test
+ */
+function RubricaPanel() {
+  const [isOpen, setIsOpen] = useState(false)
+  const { contacts, isLoadingContacts, contactsError, refreshContacts, startCall } = useVideoCall()
+
+  return (
+    <>
+      {/* Bottone per aprire la rubrica */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed bottom-6 right-6 z-[9990] flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-xl shadow-blue-600/40 transition-all hover:scale-110 hover:bg-blue-700"
+        aria-label="Apri rubrica"
+        title="Rubrica videocall"
+      >
+        <Phone className="h-6 w-6" />
+      </button>
+
+      {/* Pannello laterale */}
+      {isOpen && (
+        <div className="fixed bottom-24 right-6 z-[9989] w-80 rounded-2xl border-2 border-gray-200 bg-white p-4 shadow-2xl">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-gray-900">Videocall</h3>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              &times;
+            </button>
+          </div>
+          <ContactList
+            contacts={contacts}
+            isLoading={isLoadingContacts}
+            error={contactsError}
+            onCall={(contact) => startCall(contact)}
+            onRefresh={refreshContacts}
+          />
+        </div>
+      )}
+    </>
   )
 }

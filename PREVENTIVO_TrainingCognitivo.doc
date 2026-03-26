@@ -1,0 +1,1003 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="UTF-8">
+<title>Preventivo TrainingCognitivo</title>
+<style>
+    @page {
+        size: A4;
+        margin: 2cm;
+    }
+    body {
+        font-family: 'Calibri', 'Arial', sans-serif;
+        font-size: 11pt;
+        line-height: 1.5;
+        color: #333;
+    }
+    h1 {
+        font-size: 24pt;
+        color: #1a365d;
+        text-align: center;
+        border-bottom: 3px solid #1a365d;
+        padding-bottom: 10px;
+        margin-bottom: 5px;
+    }
+    h2 {
+        font-size: 14pt;
+        color: #2c5282;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #2c5282;
+        padding-bottom: 5px;
+    }
+    h3 {
+        font-size: 12pt;
+        color: #2d3748;
+        margin-top: 15px;
+        margin-bottom: 8px;
+    }
+    .subtitle {
+        text-align: center;
+        font-size: 14pt;
+        color: #4a5568;
+        margin-bottom: 30px;
+    }
+    .header-info {
+        text-align: center;
+        margin-bottom: 30px;
+        padding: 15px;
+        background-color: #f7fafc;
+        border: 1px solid #e2e8f0;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0 20px 0;
+    }
+    th {
+        background-color: #2c5282;
+        color: white;
+        padding: 10px;
+        text-align: left;
+        font-weight: bold;
+    }
+    td {
+        padding: 8px 10px;
+        border: 1px solid #e2e8f0;
+    }
+    tr:nth-child(even) {
+        background-color: #f7fafc;
+    }
+    tr:hover {
+        background-color: #edf2f7;
+    }
+    .totale-row {
+        background-color: #1a365d !important;
+        color: white;
+        font-weight: bold;
+    }
+    .totale-row td {
+        border-color: #1a365d;
+    }
+    .subtotale-row {
+        background-color: #bee3f8 !important;
+        font-weight: bold;
+    }
+    .currency {
+        text-align: right;
+    }
+    .hours {
+        text-align: center;
+    }
+    .section-box {
+        border: 1px solid #e2e8f0;
+        padding: 15px;
+        margin: 15px 0;
+        background-color: #f7fafc;
+        border-radius: 5px;
+    }
+    .highlight-box {
+        border: 2px solid #2c5282;
+        padding: 20px;
+        margin: 20px 0;
+        background-color: #ebf8ff;
+    }
+    .price-big {
+        font-size: 18pt;
+        font-weight: bold;
+        color: #1a365d;
+    }
+    ul {
+        margin: 10px 0;
+        padding-left: 20px;
+    }
+    li {
+        margin: 5px 0;
+    }
+    .footer {
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #e2e8f0;
+        text-align: center;
+        font-size: 10pt;
+        color: #718096;
+    }
+    .page-break {
+        page-break-before: always;
+    }
+</style>
+</head>
+<body>
+
+<!-- INTESTAZIONE -->
+<h1>PREVENTIVO DI VENDITA</h1>
+<div class="subtitle">Sistema TrainingCognitivo</div>
+
+<div class="header-info">
+    <strong>Applicazione Web per Training Cognitivo</strong><br>
+    <em>Sistema dedicato a utenti con difficolta cognitive e sensoriali</em><br><br>
+    <strong>Data:</strong> _________________ &nbsp;&nbsp;&nbsp;&nbsp;
+    <strong>Riferimento:</strong> _________________
+</div>
+
+<!-- DATI CLIENTE -->
+<h2>DATI COMMITTENTE</h2>
+<table>
+    <tr>
+        <td style="width:30%; background-color:#f7fafc;"><strong>Ragione Sociale:</strong></td>
+        <td>_________________________________________________</td>
+    </tr>
+    <tr>
+        <td style="background-color:#f7fafc;"><strong>Indirizzo:</strong></td>
+        <td>_________________________________________________</td>
+    </tr>
+    <tr>
+        <td style="background-color:#f7fafc;"><strong>P.IVA / C.F.:</strong></td>
+        <td>_________________________________________________</td>
+    </tr>
+    <tr>
+        <td style="background-color:#f7fafc;"><strong>Referente:</strong></td>
+        <td>_________________________________________________</td>
+    </tr>
+    <tr>
+        <td style="background-color:#f7fafc;"><strong>Email:</strong></td>
+        <td>_________________________________________________</td>
+    </tr>
+    <tr>
+        <td style="background-color:#f7fafc;"><strong>Telefono:</strong></td>
+        <td>_________________________________________________</td>
+    </tr>
+</table>
+
+<!-- PANORAMICA -->
+<h2>1. PANORAMICA DEL PROGETTO</h2>
+<div class="section-box">
+<table>
+    <tr>
+        <td style="width:40%;"><strong>Tipologia</strong></td>
+        <td>Applicazione Web Enterprise (PWA)</td>
+    </tr>
+    <tr>
+        <td><strong>Stack Tecnologico</strong></td>
+        <td>Next.js 16 + React 19 + TypeScript + Supabase + Tailwind CSS</td>
+    </tr>
+    <tr>
+        <td><strong>Target Utenti</strong></td>
+        <td>Centri riabilitativi, scuole, strutture sanitarie</td>
+    </tr>
+    <tr>
+        <td><strong>Linee di Codice</strong></td>
+        <td>~42.000</td>
+    </tr>
+    <tr>
+        <td><strong>Complessita</strong></td>
+        <td>Molto Alta (sistema multi-ruolo con IA integrata)</td>
+    </tr>
+</table>
+</div>
+
+<!-- AREE FUNZIONALI -->
+<h2>2. AREE FUNZIONALI SVILUPPATE</h2>
+
+<h3>2.1 INFRASTRUTTURA E ARCHITETTURA</h3>
+<table>
+    <tr>
+        <th style="width:50%;">Attivita</th>
+        <th style="width:15%;" class="hours">Ore</th>
+        <th style="width:15%;" class="currency">Tariffa</th>
+        <th style="width:20%;" class="currency">Totale</th>
+    </tr>
+    <tr>
+        <td>Setup progetto Next.js 16 App Router</td>
+        <td class="hours">8</td>
+        <td class="currency">80,00 &euro;/h</td>
+        <td class="currency">640,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Configurazione TypeScript + ESLint</td>
+        <td class="hours">4</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">240,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Integrazione Supabase (client/server/middleware)</td>
+        <td class="hours">16</td>
+        <td class="currency">80,00 &euro;/h</td>
+        <td class="currency">1.280,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Configurazione PWA (manifest, service worker, icons)</td>
+        <td class="hours">8</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">480,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Configurazione deploy Vercel</td>
+        <td class="hours">4</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">240,00 &euro;</td>
+    </tr>
+    <tr class="subtotale-row">
+        <td><strong>Subtotale Infrastruttura</strong></td>
+        <td class="hours"><strong>40</strong></td>
+        <td></td>
+        <td class="currency"><strong>2.880,00 &euro;</strong></td>
+    </tr>
+</table>
+
+<h3>2.2 DATABASE E BACKEND</h3>
+<table>
+    <tr>
+        <th style="width:50%;">Attivita</th>
+        <th style="width:15%;" class="hours">Ore</th>
+        <th style="width:15%;" class="currency">Tariffa</th>
+        <th style="width:20%;" class="currency">Totale</th>
+    </tr>
+    <tr>
+        <td>Progettazione schema database (14 tabelle)</td>
+        <td class="hours">24</td>
+        <td class="currency">80,00 &euro;/h</td>
+        <td class="currency">1.920,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Implementazione SQL PostgreSQL (658 righe)</td>
+        <td class="hours">16</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">1.120,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Row Level Security (17 policies)</td>
+        <td class="hours">20</td>
+        <td class="currency">80,00 &euro;/h</td>
+        <td class="currency">1.600,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Trigger e funzioni automatiche</td>
+        <td class="hours">8</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">560,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Tipi TypeScript per database (356 righe)</td>
+        <td class="hours">8</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">480,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>API Routes (22 endpoint)</td>
+        <td class="hours">40</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">2.800,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Seed data e script inizializzazione</td>
+        <td class="hours">8</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">480,00 &euro;</td>
+    </tr>
+    <tr class="subtotale-row">
+        <td><strong>Subtotale Database e Backend</strong></td>
+        <td class="hours"><strong>124</strong></td>
+        <td></td>
+        <td class="currency"><strong>8.960,00 &euro;</strong></td>
+    </tr>
+</table>
+
+<h3>2.3 SISTEMA DI AUTENTICAZIONE</h3>
+<table>
+    <tr>
+        <th style="width:50%;">Attivita</th>
+        <th style="width:15%;" class="hours">Ore</th>
+        <th style="width:15%;" class="currency">Tariffa</th>
+        <th style="width:20%;" class="currency">Totale</th>
+    </tr>
+    <tr>
+        <td>Integrazione Supabase Auth</td>
+        <td class="hours">16</td>
+        <td class="currency">80,00 &euro;/h</td>
+        <td class="currency">1.280,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Sistema multi-ruolo (6 livelli gerarchici)</td>
+        <td class="hours">24</td>
+        <td class="currency">80,00 &euro;/h</td>
+        <td class="currency">1.920,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Middleware protezione route</td>
+        <td class="hours">12</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">840,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Hook useAuth con gestione sessioni</td>
+        <td class="hours">8</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">560,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Form Login/Register/Reset Password</td>
+        <td class="hours">16</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">960,00 &euro;</td>
+    </tr>
+    <tr class="subtotale-row">
+        <td><strong>Subtotale Autenticazione</strong></td>
+        <td class="hours"><strong>76</strong></td>
+        <td></td>
+        <td class="currency"><strong>5.560,00 &euro;</strong></td>
+    </tr>
+</table>
+
+<div class="page-break"></div>
+
+<h3>2.4 COMPONENTI UI</h3>
+<table>
+    <tr>
+        <th style="width:50%;">Attivita</th>
+        <th style="width:15%;" class="hours">Ore</th>
+        <th style="width:15%;" class="currency">Tariffa</th>
+        <th style="width:20%;" class="currency">Totale</th>
+    </tr>
+    <tr>
+        <td>Design system base (Button, Card, Input, Select, Modal, Badge)</td>
+        <td class="hours">16</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">960,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Modal componenti complessi (7 modal CRUD)</td>
+        <td class="hours">32</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">2.240,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Layout admin (sidebar, header, navigation)</td>
+        <td class="hours">16</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">960,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Sistema validazione Zod (12 schemi)</td>
+        <td class="hours">12</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">720,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Utilities e helpers</td>
+        <td class="hours">8</td>
+        <td class="currency">50,00 &euro;/h</td>
+        <td class="currency">400,00 &euro;</td>
+    </tr>
+    <tr class="subtotale-row">
+        <td><strong>Subtotale Componenti UI</strong></td>
+        <td class="hours"><strong>84</strong></td>
+        <td></td>
+        <td class="currency"><strong>5.280,00 &euro;</strong></td>
+    </tr>
+</table>
+
+<h3>2.5 PANNELLO AMMINISTRAZIONE</h3>
+<table>
+    <tr>
+        <th style="width:50%;">Attivita</th>
+        <th style="width:15%;" class="hours">Ore</th>
+        <th style="width:15%;" class="currency">Tariffa</th>
+        <th style="width:20%;" class="currency">Totale</th>
+    </tr>
+    <tr>
+        <td>Dashboard overview con statistiche</td>
+        <td class="hours">8</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">480,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>CRUD Utenti (con creazione credenziali automatiche)</td>
+        <td class="hours">24</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">1.680,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>CRUD Educatori</td>
+        <td class="hours">16</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">1.120,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>CRUD Sedi</td>
+        <td class="hours">12</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">720,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>CRUD Settori e Classi</td>
+        <td class="hours">16</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">960,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>CRUD Categorie Esercizi</td>
+        <td class="hours">12</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">720,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>CRUD Esercizi</td>
+        <td class="hours">20</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">1.400,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Sistema assegnazione esercizi</td>
+        <td class="hours">16</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">1.120,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Gestione ruoli e staff</td>
+        <td class="hours">12</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">720,00 &euro;</td>
+    </tr>
+    <tr class="subtotale-row">
+        <td><strong>Subtotale Pannello Admin</strong></td>
+        <td class="hours"><strong>136</strong></td>
+        <td></td>
+        <td class="currency"><strong>8.920,00 &euro;</strong></td>
+    </tr>
+</table>
+
+<h3>2.6 ESERCIZI COGNITIVI INTERATTIVI</h3>
+<table>
+    <tr>
+        <th style="width:50%;">Attivita</th>
+        <th style="width:15%;" class="hours">Ore</th>
+        <th style="width:15%;" class="currency">Tariffa</th>
+        <th style="width:20%;" class="currency">Totale</th>
+    </tr>
+    <tr>
+        <td colspan="4" style="background-color:#e2e8f0;"><strong>Categorizzazione (Cerca Categoria)</strong></td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Logica esercizio + UI interattiva</td>
+        <td class="hours">24</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">1.680,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Integrazione ARASAAC pittogrammi</td>
+        <td class="hours">12</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">840,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Statistiche e gestione educatore</td>
+        <td class="hours">12</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">720,00 &euro;</td>
+    </tr>
+    <tr>
+        <td colspan="4" style="background-color:#e2e8f0;"><strong>Coordinazione Visuomotoria (Tocca Oggetto)</strong></td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Game engine con collision detection</td>
+        <td class="hours">32</td>
+        <td class="currency">80,00 &euro;/h</td>
+        <td class="currency">2.560,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Animazioni e feedback visivo/sonoro</td>
+        <td class="hours">16</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">1.120,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Statistiche e gestione</td>
+        <td class="hours">12</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">720,00 &euro;</td>
+    </tr>
+    <tr>
+        <td colspan="4" style="background-color:#e2e8f0;"><strong>Parola-Immagine</strong></td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Logica matching parola/immagine</td>
+        <td class="hours">20</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">1.400,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Upload e gestione immagini</td>
+        <td class="hours">16</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">1.120,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Export PDF risultati</td>
+        <td class="hours">12</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">720,00 &euro;</td>
+    </tr>
+    <tr>
+        <td colspan="4" style="background-color:#e2e8f0;"><strong>Scrivo Parole con Lettere</strong></td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Input drag-drop lettere</td>
+        <td class="hours">24</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">1.680,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Validazione e feedback</td>
+        <td class="hours">12</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">720,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Statistiche</td>
+        <td class="hours">8</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">480,00 &euro;</td>
+    </tr>
+    <tr class="subtotale-row">
+        <td><strong>Subtotale Esercizi Cognitivi</strong></td>
+        <td class="hours"><strong>200</strong></td>
+        <td></td>
+        <td class="currency"><strong>13.760,00 &euro;</strong></td>
+    </tr>
+</table>
+
+<div class="page-break"></div>
+
+<h3>2.7 STRUMENTI AVANZATI (con Intelligenza Artificiale)</h3>
+<table>
+    <tr>
+        <th style="width:50%;">Attivita</th>
+        <th style="width:15%;" class="hours">Ore</th>
+        <th style="width:15%;" class="currency">Tariffa</th>
+        <th style="width:20%;" class="currency">Totale</th>
+    </tr>
+    <tr>
+        <td colspan="4" style="background-color:#e2e8f0;"><strong>Analisi Espressioni Facciali (AI Vision)</strong></td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Integrazione MediaPipe Face Mesh</td>
+        <td class="hours">40</td>
+        <td class="currency">90,00 &euro;/h</td>
+        <td class="currency">3.600,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Integrazione Face-API.js (emotion detection)</td>
+        <td class="hours">32</td>
+        <td class="currency">90,00 &euro;/h</td>
+        <td class="currency">2.880,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Eye tracking e blink detection</td>
+        <td class="hours">24</td>
+        <td class="currency">90,00 &euro;/h</td>
+        <td class="currency">2.160,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Dashboard real-time</td>
+        <td class="hours">20</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">1.400,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Sistema alert intelligente</td>
+        <td class="hours">16</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">1.120,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Calibrazione webcam</td>
+        <td class="hours">12</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">840,00 &euro;</td>
+    </tr>
+    <tr>
+        <td colspan="4" style="background-color:#e2e8f0;"><strong>Comunicatore AAC (Comunicazione Aumentativa)</strong></td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Interfaccia comunicazione aumentativa</td>
+        <td class="hours">32</td>
+        <td class="currency">80,00 &euro;/h</td>
+        <td class="currency">2.560,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Griglia pittogrammi dinamica</td>
+        <td class="hours">20</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">1.400,00 &euro;</td>
+    </tr>
+    <tr>
+        <td colspan="4" style="background-color:#e2e8f0;"><strong>Ascolto Musica</strong></td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Player audio con statistiche</td>
+        <td class="hours">16</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">960,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Gestione educatore</td>
+        <td class="hours">12</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">720,00 &euro;</td>
+    </tr>
+    <tr>
+        <td colspan="4" style="background-color:#e2e8f0;"><strong>Movimento Corpo YouTube</strong></td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Integrazione video YouTube</td>
+        <td class="hours">12</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">720,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Tracking movimento</td>
+        <td class="hours">20</td>
+        <td class="currency">80,00 &euro;/h</td>
+        <td class="currency">1.600,00 &euro;</td>
+    </tr>
+    <tr>
+        <td colspan="4" style="background-color:#e2e8f0;"><strong>Rispondo con gli Occhi</strong></td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Eye gaze input system</td>
+        <td class="hours">24</td>
+        <td class="currency">90,00 &euro;/h</td>
+        <td class="currency">2.160,00 &euro;</td>
+    </tr>
+    <tr class="subtotale-row">
+        <td><strong>Subtotale Strumenti Avanzati</strong></td>
+        <td class="hours"><strong>280</strong></td>
+        <td></td>
+        <td class="currency"><strong>22.120,00 &euro;</strong></td>
+    </tr>
+</table>
+
+<h3>2.8 SISTEMA STATISTICHE E REPORTING</h3>
+<table>
+    <tr>
+        <th style="width:50%;">Attivita</th>
+        <th style="width:15%;" class="hours">Ore</th>
+        <th style="width:15%;" class="currency">Tariffa</th>
+        <th style="width:20%;" class="currency">Totale</th>
+    </tr>
+    <tr>
+        <td>Architettura dati sessione JSONB flessibile</td>
+        <td class="hours">12</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">840,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Grafici interattivi con Recharts</td>
+        <td class="hours">16</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">960,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Export PDF con jsPDF</td>
+        <td class="hours">12</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">720,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Dashboard statistiche per esercizio</td>
+        <td class="hours">24</td>
+        <td class="currency">60,00 &euro;/h</td>
+        <td class="currency">1.440,00 &euro;</td>
+    </tr>
+    <tr class="subtotale-row">
+        <td><strong>Subtotale Statistiche</strong></td>
+        <td class="hours"><strong>64</strong></td>
+        <td></td>
+        <td class="currency"><strong>3.960,00 &euro;</strong></td>
+    </tr>
+</table>
+
+<h3>2.9 DOCUMENTAZIONE E TESTING</h3>
+<table>
+    <tr>
+        <th style="width:50%;">Attivita</th>
+        <th style="width:15%;" class="hours">Ore</th>
+        <th style="width:15%;" class="currency">Tariffa</th>
+        <th style="width:20%;" class="currency">Totale</th>
+    </tr>
+    <tr>
+        <td>Documentazione tecnica</td>
+        <td class="hours">8</td>
+        <td class="currency">50,00 &euro;/h</td>
+        <td class="currency">400,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Testing manuale e bug fixing</td>
+        <td class="hours">40</td>
+        <td class="currency">50,00 &euro;/h</td>
+        <td class="currency">2.000,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Ottimizzazione performance</td>
+        <td class="hours">16</td>
+        <td class="currency">70,00 &euro;/h</td>
+        <td class="currency">1.120,00 &euro;</td>
+    </tr>
+    <tr class="subtotale-row">
+        <td><strong>Subtotale Documentazione</strong></td>
+        <td class="hours"><strong>64</strong></td>
+        <td></td>
+        <td class="currency"><strong>3.520,00 &euro;</strong></td>
+    </tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- RIEPILOGO -->
+<h2>3. RIEPILOGO ORE E COSTI</h2>
+<table>
+    <tr>
+        <th style="width:60%;">Area Funzionale</th>
+        <th style="width:20%;" class="hours">Ore</th>
+        <th style="width:20%;" class="currency">Costo</th>
+    </tr>
+    <tr>
+        <td>Infrastruttura e Architettura</td>
+        <td class="hours">40</td>
+        <td class="currency">2.880,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Database e Backend</td>
+        <td class="hours">124</td>
+        <td class="currency">8.960,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Sistema Autenticazione</td>
+        <td class="hours">76</td>
+        <td class="currency">5.560,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Componenti UI</td>
+        <td class="hours">84</td>
+        <td class="currency">5.280,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Pannello Amministrazione</td>
+        <td class="hours">136</td>
+        <td class="currency">8.920,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Esercizi Cognitivi Interattivi</td>
+        <td class="hours">200</td>
+        <td class="currency">13.760,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Strumenti Avanzati (con IA)</td>
+        <td class="hours">280</td>
+        <td class="currency">22.120,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Sistema Statistiche e Reporting</td>
+        <td class="hours">64</td>
+        <td class="currency">3.960,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Documentazione e Testing</td>
+        <td class="hours">64</td>
+        <td class="currency">3.520,00 &euro;</td>
+    </tr>
+    <tr class="totale-row">
+        <td><strong>TOTALE SVILUPPO</strong></td>
+        <td class="hours"><strong>1.068</strong></td>
+        <td class="currency"><strong>74.960,00 &euro;</strong></td>
+    </tr>
+</table>
+
+<!-- VALORE AGGIUNTO -->
+<h2>4. VALORE AGGIUNTO TECNOLOGICO</h2>
+<div class="section-box">
+<table>
+    <tr>
+        <th style="width:35%;">Tecnologia</th>
+        <th>Valore Aggiunto</th>
+    </tr>
+    <tr>
+        <td><strong>Intelligenza Artificiale</strong></td>
+        <td>Face tracking, emotion detection, eye gaze (MediaPipe + Face-API)</td>
+    </tr>
+    <tr>
+        <td><strong>PWA</strong></td>
+        <td>Installabile su dispositivi, funzionamento offline</td>
+    </tr>
+    <tr>
+        <td><strong>Multi-tenancy</strong></td>
+        <td>Gestione sedi, settori, classi separate</td>
+    </tr>
+    <tr>
+        <td><strong>Sicurezza Enterprise</strong></td>
+        <td>RLS, 6 livelli ruoli, audit log</td>
+    </tr>
+    <tr>
+        <td><strong>Scalabilita</strong></td>
+        <td>Architettura serverless Vercel + Supabase</td>
+    </tr>
+    <tr>
+        <td><strong>Accessibilita</strong></td>
+        <td>Pittogrammi ARASAAC, comunicazione aumentativa</td>
+    </tr>
+</table>
+</div>
+
+<!-- COSTI RICORRENTI -->
+<h2>5. COSTI RICORRENTI (per il committente)</h2>
+<table>
+    <tr>
+        <th style="width:60%;">Servizio</th>
+        <th style="width:40%;" class="currency">Costo</th>
+    </tr>
+    <tr>
+        <td>Supabase Pro (database + auth + storage)</td>
+        <td class="currency">~25,00 &euro;/mese</td>
+    </tr>
+    <tr>
+        <td>Vercel Pro (hosting)</td>
+        <td class="currency">~20,00 &euro;/mese</td>
+    </tr>
+    <tr>
+        <td>Dominio (.it)</td>
+        <td class="currency">~15,00 &euro;/anno</td>
+    </tr>
+    <tr class="subtotale-row">
+        <td><strong>Totale annuo stimato</strong></td>
+        <td class="currency"><strong>~555,00 &euro;/anno</strong></td>
+    </tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- OFFERTA COMMERCIALE -->
+<h2>6. OFFERTA COMMERCIALE</h2>
+
+<div class="highlight-box">
+<h3>OPZIONE A - Acquisto Licenza Perpetua</h3>
+<table>
+    <tr>
+        <td style="width:70%;">Sviluppo completo (1.068 ore)</td>
+        <td class="currency">74.960,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Sconto volume (-10%)</td>
+        <td class="currency">-7.496,00 &euro;</td>
+    </tr>
+    <tr class="totale-row">
+        <td><strong>TOTALE</strong></td>
+        <td class="currency price-big"><strong>67.464,00 &euro; + IVA</strong></td>
+    </tr>
+</table>
+<p><em>Include: codice sorgente, documentazione tecnica, 30 giorni supporto post-vendita</em></p>
+</div>
+
+<div class="highlight-box">
+<h3>OPZIONE B - Pacchetto Chiavi in Mano</h3>
+<table>
+    <tr>
+        <td style="width:70%;">Sviluppo completo</td>
+        <td class="currency">74.960,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Setup produzione e migrazione dati</td>
+        <td class="currency">3.000,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Formazione (16 ore)</td>
+        <td class="currency">1.280,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Supporto 12 mesi</td>
+        <td class="currency">6.000,00 &euro;</td>
+    </tr>
+    <tr>
+        <td>Sconto pacchetto (-15%)</td>
+        <td class="currency">-12.786,00 &euro;</td>
+    </tr>
+    <tr class="totale-row">
+        <td><strong>TOTALE</strong></td>
+        <td class="currency price-big"><strong>72.454,00 &euro; + IVA</strong></td>
+    </tr>
+</table>
+<p><em>Include: tutto dell'Opzione A + setup completo + formazione + supporto annuale</em></p>
+</div>
+
+<div class="highlight-box">
+<h3>OPZIONE C - SaaS (Licenza d'Uso)</h3>
+<table>
+    <tr>
+        <td style="width:70%;">Setup iniziale (una tantum)</td>
+        <td class="currency">5.000,00 &euro;</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="background-color:#f7fafc;"><strong>Canoni mensili:</strong></td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Fino a 50 utenti</td>
+        <td class="currency">500,00 &euro;/mese</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Fino a 200 utenti</td>
+        <td class="currency">1.200,00 &euro;/mese</td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;&nbsp;Utenti illimitati</td>
+        <td class="currency">2.500,00 &euro;/mese</td>
+    </tr>
+</table>
+<p><em>Include: hosting, manutenzione, aggiornamenti, supporto tecnico</em></p>
+</div>
+
+<!-- NOTE -->
+<h2>7. NOTE E CONDIZIONI</h2>
+<div class="section-box">
+<ul>
+    <li>I prezzi sono calcolati su tariffe medie di mercato per sviluppo enterprise</li>
+    <li>L'applicazione include tecnologie di intelligenza artificiale di ultima generazione</li>
+    <li>Il codice sorgente e di proprieta del committente (Opzioni A e B)</li>
+    <li>Possibilita di personalizzazioni su richiesta (costo a consuntivo)</li>
+    <li>Pagamento: 30% alla firma, 40% a meta progetto, 30% alla consegna</li>
+    <li>IVA 22% esclusa da tutti i prezzi indicati</li>
+</ul>
+</div>
+
+<!-- VALIDITA -->
+<div class="section-box" style="text-align:center; margin-top:30px;">
+<strong>Validita offerta: 30 giorni dalla data di emissione</strong>
+</div>
+
+<!-- FIRME -->
+<h2>8. ACCETTAZIONE</h2>
+<table style="margin-top:30px;">
+    <tr>
+        <td style="width:50%; border:none; padding:20px;">
+            <p><strong>Il Fornitore</strong></p>
+            <br><br><br>
+            <p>_________________________________</p>
+            <p>Firma e timbro</p>
+            <p>Data: _____________</p>
+        </td>
+        <td style="width:50%; border:none; padding:20px;">
+            <p><strong>Il Committente</strong></p>
+            <br><br><br>
+            <p>_________________________________</p>
+            <p>Firma e timbro</p>
+            <p>Data: _____________</p>
+        </td>
+    </tr>
+</table>
+
+<!-- FOOTER -->
+<div class="footer">
+    <p>Documento generato automaticamente - TrainingCognitivo</p>
+    <p>Per informazioni: [inserire email] | [inserire telefono]</p>
+</div>
+
+</body>
+</html>

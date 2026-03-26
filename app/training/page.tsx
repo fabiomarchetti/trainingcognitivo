@@ -11,6 +11,7 @@ import {
   Puzzle, RefreshCw
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { HelpButton } from '@/components/videocall'
 import type { CategoriaEsercizi } from '@/lib/supabase/types'
 
 interface EsercizioAssegnato {
@@ -311,6 +312,9 @@ export default function TrainingPage() {
       <footer className="text-center py-6 text-gray-500 text-sm">
         TrainingCognitivo © 2026
       </footer>
+
+      {/* Bottone Chiedi Aiuto (sempre visibile) */}
+      <HelpButton />
     </div>
   )
 }

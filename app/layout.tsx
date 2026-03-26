@@ -4,6 +4,7 @@
  */
 import type { Metadata, Viewport } from 'next'
 import { AuthProvider } from '@/components/auth'
+import VideoCallWrapper from '@/components/videocall/VideoCallWrapper'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -54,7 +55,9 @@ export default function RootLayout({
     <html lang="it">
       <body className="min-h-screen bg-gray-50 antialiased">
         <AuthProvider>
-          {children}
+          <VideoCallWrapper>
+            {children}
+          </VideoCallWrapper>
         </AuthProvider>
       </body>
     </html>

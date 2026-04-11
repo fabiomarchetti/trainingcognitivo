@@ -31,7 +31,8 @@ export function CategoriaModal({
   categoria,
   nextOrdine
 }: CategoriaModalProps) {
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
   const isEditMode = !!categoria
 
   const [formData, setFormData] = useState<FormData>({
@@ -140,7 +141,6 @@ export function CategoriaModal({
           } else {
             setError(`Errore: ${updateError.message}`)
           }
-          setIsSubmitting(false)
           return
         }
       } else {
@@ -161,17 +161,16 @@ export function CategoriaModal({
           } else {
             setError(`Errore: ${insertError.message}`)
           }
-          setIsSubmitting(false)
           return
         }
       }
 
-      setIsSubmitting(false)
       onClose()
       onSuccess()
     } catch (err: any) {
       console.error('Errore submit:', err)
       setError(err?.message || 'Errore durante il salvataggio')
+    } finally {
       setIsSubmitting(false)
     }
   }

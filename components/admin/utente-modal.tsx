@@ -70,7 +70,8 @@ export function UtenteModal({
   classi,
   idRuoloUtente
 }: UtenteModalProps) {
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
   const isEditMode = !!utente
 
   const [formData, setFormData] = useState<FormData>({
@@ -266,13 +267,12 @@ export function UtenteModal({
         }
       }
 
-      // Reset stato e chiudi
-      setIsSubmitting(false)
       onClose()
       onSuccess()
     } catch (err: any) {
       console.error('Errore submit:', err)
       setError(err?.message || 'Errore durante il salvataggio')
+    } finally {
       setIsSubmitting(false)
     }
   }

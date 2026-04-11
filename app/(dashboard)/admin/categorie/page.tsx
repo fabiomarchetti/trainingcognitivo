@@ -37,7 +37,8 @@ export default function CategoriePage() {
   const [sortColumn, setSortColumn] = useState<SortColumn>('ordine')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
 
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
   const isLoadingRef = useRef(false)
   const hasLoadedRef = useRef(false)
 

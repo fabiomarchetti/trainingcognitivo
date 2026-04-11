@@ -5,7 +5,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { X, Puzzle, FileText, Save, AlertCircle, Loader2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import type { Esercizio, CategoriaEsercizi } from '@/lib/supabase/types'
 
 interface EsercizioWithCategoria extends Esercizio {
@@ -18,6 +17,7 @@ interface EsercizioModalProps {
   onSuccess: () => void
   esercizio?: EsercizioWithCategoria | null
   categorie: CategoriaEsercizi[]
+  defaultCategoriaId?: number | null
 }
 
 interface FormData {
@@ -33,9 +33,9 @@ export function EsercizioModal({
   onClose,
   onSuccess,
   esercizio,
-  categorie
+  categorie,
+  defaultCategoriaId = null
 }: EsercizioModalProps) {
-  const supabase = createClient()
   const isEditMode = !!esercizio
 
   const [formData, setFormData] = useState<FormData>({
@@ -87,11 +87,10 @@ export function EsercizioModal({
         stato: (esercizio.stato as 'attivo' | 'bozza' | 'archiviato') || 'attivo'
       })
     } else {
-      // Per nuovo esercizio, usa la prima categoria disponibile
-      const primaCategoria = categorie.length > 0 ? categorie[0].id : null
+      // Per nuovo esercizio: usa il filtro attivo se presente, altrimenti nessuna (forza scelta)
       setFormData({
         nome: '',
-        id_categoria: primaCategoria,
+        id_categoria: defaultCategoriaId,
         descrizione: '',
         slug: '',
         stato: 'attivo'
@@ -99,7 +98,7 @@ export function EsercizioModal({
     }
     setError(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [esercizio, isOpen])
+  }, [esercizio, isOpen, defaultCategoriaId])
 
   // Genera slug automaticamente dal nome
   const generateSlug = (nome: string) => {
@@ -152,57 +151,46 @@ export function EsercizioModal({
       const slug = formData.slug.trim() || generateSlug(formData.nome)
 
       if (isEditMode && esercizio) {
-        // MODIFICA esercizio esistente
-        const { error: updateError } = await supabase
-          .from('esercizi')
-          .update({
+        // MODIFICA esercizio esistente via API (bypassa RLS)
+        const response = await fetch('/api/admin/esercizi', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: esercizio.id,
             nome: formData.nome.trim(),
             id_categoria: formData.id_categoria,
             descrizione: formData.descrizione.trim(),
-            slug: slug,
+            slug,
             stato: formData.stato
           })
-          .eq('id', esercizio.id)
-
-        if (updateError) {
-          if (updateError.message.includes('duplicate') || updateError.message.includes('unique')) {
-            setError('Esiste già un esercizio con questo slug')
-          } else {
-            setError(`Errore: ${updateError.message}`)
-          }
-          isSubmittingRef.current = false
-          setIsSubmitting(false)
+        })
+        const result = await response.json()
+        if (!result.success) {
+          setError(result.message || 'Errore durante il salvataggio')
           return
         }
       } else {
-        // CREA nuovo esercizio
-        const { error: insertError } = await supabase
-          .from('esercizi')
-          .insert({
+        // CREA nuovo esercizio via API (bypassa RLS)
+        const response = await fetch('/api/admin/esercizi', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
             nome: formData.nome.trim(),
             id_categoria: formData.id_categoria,
             descrizione: formData.descrizione.trim(),
-            slug: slug,
-            stato: formData.stato,
-            config: {}
+            slug,
+            stato: formData.stato
           })
-
-        if (insertError) {
-          if (insertError.message.includes('duplicate') || insertError.message.includes('unique')) {
-            setError('Esiste già un esercizio con questo slug')
-          } else {
-            setError(`Errore: ${insertError.message}`)
-          }
-          isSubmittingRef.current = false
-          setIsSubmitting(false)
+        })
+        const result = await response.json()
+        if (!result.success) {
+          setError(result.message || 'Errore durante il salvataggio')
           return
         }
 
-        // Trova lo slug della categoria
+        // Crea la cartella template dell'esercizio (non bloccante)
         const categoriaSelezionata = categorie.find(c => c.id === formData.id_categoria)
         const categoriaSlug = categoriaSelezionata?.slug || 'default'
-
-        // Crea la cartella dell'esercizio
         try {
           const folderResponse = await fetch('/api/admin/create-exercise-folder', {
             method: 'POST',
@@ -214,25 +202,21 @@ export function EsercizioModal({
               esercizioDescrizione: formData.descrizione.trim()
             })
           })
-
           const folderResult = await folderResponse.json()
           if (!folderResult.success) {
             console.warn('Cartella non creata:', folderResult.error)
-            // Non blocchiamo, l'esercizio è già nel database
           }
         } catch (folderErr) {
           console.warn('Errore creazione cartella:', folderErr)
-          // Non blocchiamo, l'esercizio è già nel database
         }
       }
 
-      isSubmittingRef.current = false
-      setIsSubmitting(false)
       onClose()
       onSuccess()
     } catch (err: any) {
       console.error('Errore submit:', err)
       setError(err?.message || 'Errore durante il salvataggio')
+    } finally {
       isSubmittingRef.current = false
       setIsSubmitting(false)
     }

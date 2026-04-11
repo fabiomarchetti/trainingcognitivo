@@ -5,14 +5,12 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Puzzle, Plus, Pencil, Trash2, RefreshCw, AlertCircle, Play, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown, Phone } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { Puzzle, Plus, Pencil, Trash2, RefreshCw, AlertCircle, Play, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { dataCache } from '@/lib/cache/data-cache'
 import { useAuth } from '@/components/auth/auth-provider'
 import { StatusBadge } from '@/components/ui/badge'
 import { ConfirmModal } from '@/components/ui/modal'
 import { EsercizioModal } from '@/components/admin/esercizio-modal'
-import { useVideoCall, ContactList, HelpButton } from '@/components/videocall'
 import type { Esercizio, CategoriaEsercizi } from '@/lib/supabase/types'
 
 interface EsercizioWithCategoria extends Esercizio {
@@ -44,7 +42,6 @@ export default function EserciziPage() {
   const [sortColumn, setSortColumn] = useState<SortColumn>('id')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
-  const supabase = createClient()
   const isLoadingRef = useRef(false)
   const hasLoadedRef = useRef(false)
 
@@ -70,12 +67,9 @@ export default function EserciziPage() {
   // Carica categorie
   const loadCategorie = async () => {
     try {
-      const { data } = await supabase
-        .from('categorie_esercizi')
-        .select('*')
-        .order('ordine', { ascending: true })
-
-      if (data) setCategorie(data)
+      const response = await fetch('/api/admin/categorie')
+      const json = await response.json()
+      if (json.success && json.data) setCategorie(json.data)
     } catch (err) {
       console.error('[ESERCIZI] Errore caricamento categorie:', err)
     }
@@ -83,15 +77,11 @@ export default function EserciziPage() {
 
   // Carica esercizi
   const loadEsercizi = async (forceReload = false) => {
-    // Segna che abbiamo tentato il caricamento (previene loop)
     if (!forceReload) {
       hasLoadedRef.current = true
     }
 
-    if (isLoadingRef.current) {
-      console.log('[ESERCIZI] Caricamento già in corso, skip')
-      return
-    }
+    if (isLoadingRef.current) return
 
     // Controlla cache
     if (!forceReload) {
@@ -108,30 +98,17 @@ export default function EserciziPage() {
     setError(null)
 
     try {
-      const { data, error: queryError } = await supabase
-        .from('esercizi')
-        .select(`
-          *,
-          categoria:id_categoria(*)
-        `)
-        .order('id', { ascending: false })
+      const response = await fetch('/api/admin/esercizi')
+      const json = await response.json()
 
-      if (queryError) {
-        setError(`Errore caricamento esercizi: ${queryError.message}`)
+      if (!json.success) {
+        setError(`Errore caricamento esercizi: ${json.message}`)
         return
       }
 
-      const eserciziData = (data || []).map((e: any) => ({
-        ...e,
-        categoria: e.categoria
-      }))
-
-      setEsercizi(eserciziData)
-      dataCache.set(CACHE_KEY, eserciziData)
+      setEsercizi(json.data || [])
+      dataCache.set(CACHE_KEY, json.data || [])
     } catch (err: any) {
-      const isAbortError = err?.message?.includes('AbortError') ||
-                          err?.name === 'AbortError'
-      if (isAbortError) return
       setError(`Errore: ${err?.message || 'Errore sconosciuto'}`)
     } finally {
       setIsLoading(false)
@@ -159,10 +136,12 @@ export default function EserciziPage() {
     setEsercizioModalOpen(true)
   }
 
-  // Chiudi modal
+  // Chiudi modal - ricarica sempre per sicurezza
   const handleCloseModal = () => {
     setEsercizioModalOpen(false)
     setEsercizioToEdit(null)
+    dataCache.invalidate(CACHE_KEY)
+    loadEsercizi(true)
   }
 
   // Successo operazione
@@ -181,12 +160,11 @@ export default function EserciziPage() {
     if (!esercizioToDelete) return
 
     try {
-      const { error } = await supabase
-        .from('esercizi')
-        .delete()
-        .eq('id', esercizioToDelete.id)
-
-      if (error) throw error
+      const response = await fetch(`/api/admin/esercizi?id=${esercizioToDelete.id}`, {
+        method: 'DELETE'
+      })
+      const result = await response.json()
+      if (!result.success) throw new Error(result.message)
 
       setDeleteModalOpen(false)
       setEsercizioToDelete(null)
@@ -533,6 +511,7 @@ export default function EserciziPage() {
         onSuccess={handleSuccess}
         esercizio={esercizioToEdit}
         categorie={categorie}
+        defaultCategoriaId={filtroCategoria}
       />
 
       {/* Modal Conferma Eliminazione */}
@@ -549,55 +528,6 @@ export default function EserciziPage() {
         variant="danger"
       />
 
-      {/* Pannello Rubrica Videocall (test) */}
-      <RubricaPanel />
-
-      {/* Bottone Chiedi Aiuto (test) */}
-      <HelpButton />
     </div>
-  )
-}
-
-/**
- * Pannello laterale rubrica - componente interno per il test
- */
-function RubricaPanel() {
-  const [isOpen, setIsOpen] = useState(false)
-  const { contacts, isLoadingContacts, contactsError, refreshContacts, startCall } = useVideoCall()
-
-  return (
-    <>
-      {/* Bottone per aprire la rubrica */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-[9990] flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-xl shadow-blue-600/40 transition-all hover:scale-110 hover:bg-blue-700"
-        aria-label="Apri rubrica"
-        title="Rubrica videocall"
-      >
-        <Phone className="h-6 w-6" />
-      </button>
-
-      {/* Pannello laterale */}
-      {isOpen && (
-        <div className="fixed bottom-24 right-6 z-[9989] w-80 rounded-2xl border-2 border-gray-200 bg-white p-4 shadow-2xl">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-lg font-bold text-gray-900">Videocall</h3>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              &times;
-            </button>
-          </div>
-          <ContactList
-            contacts={contacts}
-            isLoading={isLoadingContacts}
-            error={contactsError}
-            onCall={(contact) => startCall(contact)}
-            onRefresh={refreshContacts}
-          />
-        </div>
-      )}
-    </>
   )
 }

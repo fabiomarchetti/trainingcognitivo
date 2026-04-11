@@ -1,0 +1,23 @@
+{
+  "name": "Numeri e Lettere - Pregrafismo",
+  "short_name": "Numeri e Lettere",
+  "description": "Esercizio di pregrafismo per tracciare numeri e lettere",
+  "start_url": "/training_cognitivo/pregrafismo/numeri-e-lettere",
+  "scope": "/training_cognitivo/pregrafismo/numeri-e-lettere",
+  "display": "standalone",
+  "background_color": "#f5f3ff",
+  "theme_color": "#9333ea",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

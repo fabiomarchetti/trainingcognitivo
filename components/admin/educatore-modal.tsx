@@ -36,7 +36,8 @@ export function EducatoreModal({
   sedi,
   idRuoloEducatore
 }: EducatoreModalProps) {
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
   const isEditMode = !!educatore
 
   const [formData, setFormData] = useState<FormData>({
@@ -215,12 +216,12 @@ export function EducatoreModal({
         }
       }
 
-      setIsSubmitting(false)
       onClose()
       onSuccess()
     } catch (err: any) {
       console.error('Errore submit:', err)
       setError(err?.message || 'Errore durante il salvataggio')
+    } finally {
       setIsSubmitting(false)
     }
   }

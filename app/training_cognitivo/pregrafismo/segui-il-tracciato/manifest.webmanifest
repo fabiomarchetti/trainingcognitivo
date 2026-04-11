@@ -1,0 +1,23 @@
+{
+  "name": "Segui il Tracciato - Pregrafismo",
+  "short_name": "Segui Tracciato",
+  "description": "Esercizio di pregrafismo: traccia il percorso dall'oggetto al target",
+  "start_url": "/training_cognitivo/pregrafismo/segui-il-tracciato",
+  "scope": "/training_cognitivo/pregrafismo/segui-il-tracciato",
+  "display": "standalone",
+  "background_color": "#eff6ff",
+  "theme_color": "#2563eb",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
